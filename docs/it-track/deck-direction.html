@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OwlMatch deck direction</title>
+<style>
+  :root { --bg:#fafaf8; --fg:#111; --muted:#666; --line:#e8e8e3; --card:#fff; --gold:#FFC629; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#121212; --fg:#f4f4f2; --muted:#a3a3a3; --line:#2a2a2a; --card:#1b1b1b; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 28px 18px 120px; }
+  h1 { font-size: 28px; letter-spacing:-.02em; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 32px 0 10px; }
+  p.lead { color: var(--muted); margin: 0 0 8px; }
+  .grid { display:grid; gap:14px; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); }
+  .opt { border:2px solid var(--line); background:var(--card); border-radius:18px; padding:12px; cursor:pointer; text-align:left; color:inherit; font:inherit; }
+  .opt[aria-pressed="true"] { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(255,198,41,.35); }
+  .thumb { aspect-ratio:16/9; border-radius:12px; padding:14px; display:flex; flex-direction:column; justify-content:flex-end; overflow:hidden; position:relative; }
+  .thumb b { font-size:22px; letter-spacing:-.03em; }
+  .thumb small { opacity:.75; }
+  .a { background:#000; color:#fff; } .a b span { color:#FFC629; }
+  .a::after { content:""; position:absolute; right:-30px; top:-30px; width:120px; height:120px; border-radius:50%; background:#FFC629; opacity:.9; }
+  .b { background:#fff; color:#000; border:1px solid #e8e8e3; } .b::before { content:""; position:absolute; left:0; top:0; bottom:0; width:10px; background:#FFC629; }
+  .c { background:#FFC629; color:#000; }
+  .opt .name { font-weight:700; margin-top:10px; } .opt .desc { color:var(--muted); font-size:14px; }
+  ol { padding-left: 0; list-style:none; margin:0; }
+  li { display:flex; gap:12px; align-items:flex-start; border:1px solid var(--line); background:var(--card); border-radius:14px; padding:12px 14px; margin-bottom:8px; }
+  li input { width:22px; height:22px; margin-top:2px; accent-color:#000; }
+  li .t { font-weight:650; } li .d { color:var(--muted); font-size:14px; }
+  textarea { width:100%; min-height:80px; border-radius:14px; border:1px solid var(--line); background:var(--card); color:inherit; padding:12px; font:inherit; }
+  .bar { position:fixed; left:0; right:0; bottom:0; background:var(--bg); border-top:1px solid var(--line); padding:12px 18px; display:flex; gap:12px; align-items:center; justify-content:center; }
+  .bar button { min-height:48px; padding:0 26px; border-radius:999px; border:0; background:#FFC629; color:#000; font:700 16px system-ui; cursor:pointer; }
+  .status { color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>OwlMatch pitch deck — pick the direction</h1>
+  <p class="lead">I'll build the 7-slide PowerPoint from what you choose here. Same KSU-inspired white / black / gold system as the app.</p>
+
+  <h2>1. Visual direction</h2>
+  <div class="grid" id="looks">
+    <button class="opt" data-look="bold-dark" aria-pressed="false">
+      <div class="thumb a"><small>OwlMatch</small><b>Find your <span>people.</span></b></div>
+      <div class="name">Bold dark</div><div class="desc">Black slides, gold highlights. Matches the onboarding screen; high drama on a projector.</div>
+    </button>
+    <button class="opt" data-look="clean-light" aria-pressed="false">
+      <div class="thumb b"><small>OwlMatch</small><b>Find your people.</b></div>
+      <div class="name">Clean light</div><div class="desc">White slides, black type, gold accent bar. Matches the main app; easiest to read in a bright room.</div>
+    </button>
+    <button class="opt" data-look="mixed" aria-pressed="false">
+      <div class="thumb c"><small>OwlMatch</small><b>Find your people.</b></div>
+      <div class="name">Mixed rhythm</div><div class="desc">Dark title + closing slides, light content slides, one gold "AI engine" slide.</div>
+    </button>
+  </div>
+
+  <h2>2. Slides to include</h2>
+  <ol id="slides">
+    <li><input type="checkbox" checked data-slide="title"><div><div class="t">OwlMatch</div><div class="d">Logo, tagline, one-line description.</div></div></li>
+    <li><input type="checkbox" checked data-slide="problem"><div><div class="t">The problem</div><div class="d">Scattered listings, hard to find relevant things, going alone is intimidating. No invented stats.</div></div></li>
+    <li><input type="checkbox" checked data-slide="solution"><div><div class="t">Our solution</div><div class="d">Discover → Match → Connect → Attend diagram.</div></div></li>
+    <li><input type="checkbox" checked data-slide="ai"><div><div class="t">AI is the engine</div><div class="d">Real pipeline: Gemini profile → hard filters → shortlist → Gemini re-rank → validated → swipe feedback; fallback.</div></div></li>
+    <li><input type="checkbox" checked data-slide="demo"><div><div class="t">Product demo</div><div class="d">Real screenshots of the two-student story.</div></div></li>
+    <li><input type="checkbox" checked data-slide="tech"><div><div class="t">Architecture & feasibility</div><div class="d">Stack, data sources, cost, limits, codebase quality (Nudox).</div></div></li>
+    <li><input type="checkbox" checked data-slide="impact"><div><div class="t">Impact & next</div><div class="d">Now vs. future integrations. Ends with "Discover your interests. Find your people."</div></div></li>
+  </ol>
+
+  <h2>3. Anything else? (optional)</h2>
+  <textarea id="notes" placeholder="Team member names for the title slide, things to emphasize, etc."></textarea>
+
+  <p class="status" data-it-bind="status"></p>
+</main>
+<div class="bar">
+  <span class="status" id="hint">Pick a direction to continue</span>
+  <button id="send">Send to Claude</button>
+</div>
+<script>
+  let look = null;
+  document.querySelectorAll('#looks .opt').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      look = btn.dataset.look;
+      document.querySelectorAll('#looks .opt').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+      document.getElementById('hint').textContent = 'Ready to send';
+    });
+  });
+  document.getElementById('send').addEventListener('click', () => {
+    if (!look) { document.getElementById('hint').textContent = 'Pick a visual direction first'; return; }
+    const slides = [...document.querySelectorAll('#slides input')].filter((i) => i.checked).map((i) => i.dataset.slide);
+    It.stage('look', look);
+    It.stage('slides', slides);
+    It.stage('notes', document.getElementById('notes').value.trim());
+    It.commit('deck-direction').then(() => { document.getElementById('hint').textContent = 'Sent — Claude is on it'; });
+  });
+</script>
+</body>
+</html>

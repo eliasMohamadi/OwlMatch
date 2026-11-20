@@ -45,11 +45,11 @@ export function SwipeDeck({ items, onDecide, onOpen }: SwipeDeckProps) {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-      if (target.closest('input, textarea, select, [role="dialog"]')) return;
+      const target = event.target;
+      if (target instanceof Element && target.closest('input, textarea, select, [role="dialog"]')) return;
       if (event.key === 'ArrowRight') void commit('interested');
       else if (event.key === 'ArrowLeft') void commit('passed');
-      else if (event.key === 'Enter' && target === document.body && top) onOpen(top);
+      else if (event.key === 'Enter' && (target === document.body || target === window) && top) onOpen(top);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
