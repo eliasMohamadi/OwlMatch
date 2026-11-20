@@ -10,3 +10,5 @@ playwright-report/
 .qa/
 .e2e-data/
 docs/demo-video/*.webm
+.idea/
+.vscode/
