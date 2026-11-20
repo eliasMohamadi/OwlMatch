@@ -25,7 +25,7 @@ Return JSON exactly like:
  "preferredGroupSize": "small" | "large" | "any",
  "preferredEnergy": "relaxed" | "high" | "any",
  "goals": up to 3 short goals such as "Meet new people"}
-Infer only what the answers support. Do not invent hobbies.`;
+Infer only what the answers support. Do not invent hobbies. A major or degree name (e.g. "software engineering student") describes what they study, not a hobby: do not infer an interest from it.`;
 }
 
 function compactEvent(event: CampusEvent) {

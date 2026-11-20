@@ -23,9 +23,20 @@ interface ModelListBody {
 let activeModel: string = config.gemini.model;
 
 /**
+ * Ask for low "thinking" effort: our tasks are short structured rewrites, and default
+ * thinking measured ~17 s vs ~9 s per ranking call. Models that reject the setting
+ * (HTTP 400 naming it) are retried once without it, and it stays off from then on.
+ */
+let useLowThinking = true;
+
+/**
  * If the configured model was retired (HTTP 404), pick the newest available
  * "flash" model that supports generateContent, so the demo keeps working.
  */
+/** Only general-purpose models named like "gemini-3.8-flash": not -lite, -tts, -omni, previews, etc. */
+const PLAIN_FLASH_MODEL = /^gemini-\d+(\.\d+)?-flash$/;
+const modelVersion = (name: string): number => Number(name.match(/gemini-(\d+(?:\.\d+)?)/)?.[1] ?? 0);
+
 async function replacementModel(): Promise<string | null> {
   try {
     const response = await fetch(`${API_BASE}?pageSize=200`, { headers: { 'x-goog-api-key': config.gemini.apiKey } });
@@ -34,9 +45,8 @@ async function replacementModel(): Promise<string | null> {
     const candidates = models
       .filter((m) => m.supportedGenerationMethods?.includes('generateContent'))
       .map((m) => (m.name ?? '').replace(/^models\//, ''))
-      .filter((name) => name.includes('flash') && !/(lite|image|tts|audio|live|exp|preview)/.test(name))
-      .sort()
-      .reverse();
+      .filter((name) => PLAIN_FLASH_MODEL.test(name))
+      .sort((a, b) => modelVersion(b) - modelVersion(a));
     return candidates[0] ?? null;
   } catch {
     return null;
@@ -63,7 +73,11 @@ export async function generateJson<T>(
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': config.gemini.apiKey },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json', temperature: options.temperature ?? 0.4 },
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: options.temperature ?? 0.4,
+          ...(useLowThinking ? { thinkingConfig: { thinkingLevel: 'low' } } : {}),
+        },
       }),
     });
     const body = (await response.json()) as GeminiResponseBody;
@@ -74,6 +88,11 @@ export async function generateJson<T>(
         activeModel = replacement;
         return generateJson(prompt, schema, options);
       }
+    }
+    if (response.status === 400 && useLowThinking && /thinking/i.test(body.error?.message ?? '')) {
+      console.warn(`[ai] model ${activeModel} rejected thinkingLevel; retrying without it`);
+      useLowThinking = false;
+      return generateJson(prompt, schema, options);
     }
     if (!response.ok) return { ok: false, reason: `Gemini HTTP ${response.status}: ${body.error?.message ?? 'unknown error'}` };
 

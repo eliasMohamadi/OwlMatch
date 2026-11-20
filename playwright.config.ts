@@ -6,10 +6,13 @@ import { defineConfig, devices } from '@playwright/test';
  */
 const API_PORT = 8790;
 const WEB_PORT = 5190;
+const LIVE_AI = Boolean(process.env.E2E_USE_GEMINI);
 
 export default defineConfig({
   testDir: 'e2e',
-  timeout: 90_000,
+  timeout: LIVE_AI ? 180_000 : 90_000,
+  // Live Gemini calls take ~5–10 s each; give assertions room when they're on.
+  expect: { timeout: LIVE_AI ? 30_000 : 5_000 },
   workers: 1,
   reporter: [['list']],
   use: {
@@ -21,7 +24,8 @@ export default defineConfig({
   webServer: [
     {
       command: 'npx tsx server/index.ts',
-      env: { PORT: String(API_PORT), OWLMATCH_DATA_DIR: '.e2e-data', GEMINI_API_KEY: process.env.E2E_USE_GEMINI ? (process.env.GEMINI_API_KEY ?? '') : '' },
+      // Default: AI disabled for fast, deterministic runs. E2E_USE_GEMINI=1 lets the server read the key from .env.
+      env: { PORT: String(API_PORT), OWLMATCH_DATA_DIR: '.e2e-data', ...(LIVE_AI ? {} : { GEMINI_API_KEY: '' }) },
       port: API_PORT,
       reuseExistingServer: false,
     },

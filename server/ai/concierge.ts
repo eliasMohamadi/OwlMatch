@@ -61,7 +61,9 @@ export async function askConcierge(db: Readonly<Database>, student: Student, mes
 
   const allowed = new Set(ranked.map((r) => r.event.id));
   const aiReasons = new Map(reply.ok ? reply.data.picks.filter((p) => allowed.has(p.eventId)).map((p) => [p.eventId, p.reason]) : []);
-  const items = ranked.map((scored) => {
+  // When Gemini chose picks, show exactly those so the cards match what the reply says.
+  const shown = aiReasons.size > 0 ? ranked.filter((r) => aiReasons.has(r.event.id)) : ranked;
+  const items = shown.map((scored) => {
     const rule = toRuleRecommendation(requestStudent, scored, signals);
     const aiReason = aiReasons.get(scored.event.id);
     return {

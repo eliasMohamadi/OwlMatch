@@ -26,7 +26,9 @@ describe('generateJson', () => {
         new Response(
           JSON.stringify({
             models: [
+              { name: 'models/gemini-8.5-flash', supportedGenerationMethods: ['generateContent'] },
               { name: 'models/gemini-9-flash', supportedGenerationMethods: ['generateContent'] },
+              { name: 'models/gemini-omni-9.5-flash', supportedGenerationMethods: ['generateContent'] },
               { name: 'models/gemini-9-flash-tts', supportedGenerationMethods: ['generateContent'] },
               { name: 'models/text-embedding-9', supportedGenerationMethods: ['embedContent'] },
             ],

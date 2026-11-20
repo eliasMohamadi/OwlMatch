@@ -62,7 +62,7 @@ Open the printed web URL. The default demo student is **Jordan**. Use the avatar
 |---|---|---|---|
 | `GEMINI_API_KEY` | no | — | Server-only. Without it every AI step uses the labeled fallback |
 | `GEMINI_MODEL` | no | `gemini-2.5-flash` | Any Gemini model that supports JSON output |
-| `GEMINI_TIMEOUT_MS` | no | `15000` | Per-call timeout before falling back |
+| `GEMINI_TIMEOUT_MS` | no | `25000` | Per-call timeout before falling back |
 | `PORT` | no | `8787` | API port; the Vite dev proxy follows it |
 | `OWLMATCH_DATA_DIR` | no | `server/data` | Where `db.json` and uploads live |
 

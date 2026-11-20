@@ -16,7 +16,8 @@ const ROOT = path.resolve(import.meta.dirname, '..');
 loadDotEnv(path.join(ROOT, '.env'));
 
 const DEFAULT_PORT = 8787;
-const DEFAULT_GEMINI_TIMEOUT_MS = 15000;
+/** Measured live: ~9 s per ranking call with low thinking; 25 s leaves headroom on slow Wi-Fi. */
+const DEFAULT_GEMINI_TIMEOUT_MS = 25000;
 
 export const config = {
   root: ROOT,
