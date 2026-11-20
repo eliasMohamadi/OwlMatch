@@ -35,8 +35,8 @@ export function ComparisonPanel() {
           <Skeleton className="h-96" />
         </div>
       ) : (
-        <div className="mt-5 grid gap-6 md:grid-cols-2">
-          <section>
+        <div className="mt-5 grid grid-cols-1 gap-6 md:grid-cols-2">
+          <section className="min-w-0">
             <h2 className="mb-1 flex items-center gap-2 font-bold text-ink">
               <ListFilter size={18} aria-hidden /> Category filter only
             </h2>
@@ -49,7 +49,7 @@ export function ComparisonPanel() {
               ))}
             </ol>
           </section>
-          <section>
+          <section className="min-w-0">
             <h2 className="mb-1 flex items-center gap-2 font-bold text-ink">
               <Sparkles size={18} className="text-gold-deep" aria-hidden /> OwlMatch {data.personalized.mode === 'ai' ? 'AI' : 'rules (AI offline)'}
             </h2>

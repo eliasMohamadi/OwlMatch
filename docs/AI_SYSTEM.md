@@ -70,17 +70,17 @@ Swipes are persisted, and `learnFromSwipes()` turns them into per-category affin
 - **Category filter only.** The fraction of an event's categories the student selected. It ignores everything else.
 - **OwlMatch pipeline.** The ranking described above.
 
-Verified example (rules path, no API key, Marietta, Nov 20 seed). Maya selected Gaming, Tech and Social and wrote *"…into gaming and programming. I want to make friends, but I prefer casual, small-group hangouts."*
+Verified live example (Gemini `gemini-3.8-flash`, 2026-11-20, after Jordan published the game night). Maya selected Gaming, Tech and Social and wrote *"I'm a software engineering student into gaming and programming. I want to make friends, but I prefer casual, small-group hangouts."*
 
-| # | Category filter only | OwlMatch pipeline (rules) |
+| # | Category filter only | OwlMatch + Gemini (live) |
 |---|---|---|
-| 1 | 100 · Intro to Game Dev | 88 · Intro to Game Dev: *"Matches your interest in tech and gaming, and it's a small group, like you prefer."* |
-| 2 | 100 · **Valorant Scrims & Tryouts** (competitive, Gold+ only) | 79 · Sunset Volleyball |
-| 3 | 67 · Hackathon Team Mixer | 74 · Hackathon Team Mixer |
-| 4 | 50 · Anime & Sketch Night | 72 · Valorant Scrims (lowered: high-energy, not beginner-friendly) |
-| 5 | 50 · Pickup Basketball | 71 · Anime & Sketch Night (small group) |
+| 1 | 100 · Intro to Game Dev | 98 · Casual Game Night (Jordan's event) |
+| 2 | 100 · Casual Game Night | 94 · Intro to Game Dev: *"…pair programming a Godot platformer in a small weekend group is an ideal fit."* |
+| 3 | 100 · **Valorant Scrims & Tryouts** | 78 · Robotics Build Session: *"You like programming, so mentoring Arduino controllers…"* (not tagged gaming) |
+| 4 | 67 · Hackathon Team Mixer | 75 · Hackathon Mixer: *"…though the energy is higher than your preferred relaxed vibe."* |
+| 5 | 50 · Anime & Sketch Night | 70 · Anime & Sketch Night |
 
-With a Gemini key, Step D re-ranks this shortlist and writes the reasons from Maya's own words. Run the "Why AI?" tab to see the live output.
+In the full deck, Valorant falls to 6th of 9 (62). Gemini output varies slightly between runs, and the rule-based path produces a similar ordering (Game Dev first, Valorant lowered).
 
 ## Safety and limits
 

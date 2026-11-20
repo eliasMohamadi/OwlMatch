@@ -178,8 +178,8 @@ async function main() {
   title(s, 'Same events, smarter ranking');
   s.addText('Maya: “into gaming and programming… I prefer casual, small-group hangouts.”', { x: 0.5, y: 1.1, w: 9, h: 0.4, fontSize: 14, italic: true, color: HEX.muted, margin: 0, isTextBox: true });
   const rows = [
-    ['Category filter only', ['100%  Intro to Game Dev', '100%  Valorant Scrims & Tryouts', '67%  Hackathon Team Mixer', '50%  Anime & Sketch Night'], HEX.surface, HEX.ink],
-    ['OwlMatch pipeline', ['Intro to Game Dev (small group)', 'Sunset Volleyball', 'Hackathon Team Mixer', 'Valorant ↓ (competitive, high-energy)'], HEX.ink, HEX.white],
+    ['Category filter only', ['100%  Intro to Game Dev', '100%  Casual Game Night', '100%  Valorant Scrims & Tryouts', '67%  Hackathon Team Mixer'], HEX.surface, HEX.ink],
+    ['Gemini (live)', ['98%  Casual Game Night', '94%  Intro to Game Dev', '78%  Robotics Build: “you like programming”', 'Valorant tryouts drop to 62%'], HEX.ink, HEX.white],
   ];
   for (let i = 0; i < rows.length; i++) {
     const [head, items, fill, color] = rows[i];
@@ -191,7 +191,7 @@ async function main() {
       { x: x + 0.3, y: 2.35, w: 3.85, h: 2.2, fontSize: 13, color, paraSpaceAfter: 9, valign: 'top', margin: 0, isTextBox: true },
     );
   }
-  s.addNotes('Here is why this beats filtering. Same student, same events. A category filter ties competitive Valorant tryouts with a beginner game-dev workshop at 100 percent, because both are tagged gaming. OwlMatch reads that she wants casual, small groups, so the workshop leads and the tryouts drop. This exact comparison is live in the app under the Why AI tab — the figures shown are from our rule-based path; with Gemini enabled the reasons are written from her own words.');
+  s.addNotes('Here is why this beats filtering. Same student, same events. A category filter scores competitive Valorant tryouts at 100 percent, tied with a casual game night, because both are tagged gaming. Gemini reads that she wants casual, small groups: the game night and game-dev workshop lead, it surfaces a robotics build night because she said she likes programming even though it is not tagged gaming, and Valorant drops to 62. These are real outputs from our live Gemini run, visible in the app under the Why AI tab.');
 
   /* ---------------- 6. Demo ---------------- */
   pres.addSection({ title: 'Demo' });

@@ -41,7 +41,7 @@ Recommended capture: a browser window at **430×932** (mobile layout) for scenes
 | 1:26–1:30 | Welcome/logo | "OwlMatch. Discover your interests. Find your people." |
 
 ### Automated recording (already produced)
-`docs/demo-video/owlmatch-demo.mp4` (~65 s, 430×932, captioned, no audio) was recorded by [`scripts/record-demo.mjs`](../scripts/record-demo.mjs) driving the real app. It recorded the **rule-based fallback** path, because no Gemini key was configured at recording time. Re-record with the key in place:
+`docs/demo-video/owlmatch-demo.mp4` (~83 s, 430×932, captioned, no audio) was recorded by [`scripts/record-demo.mjs`](../scripts/record-demo.mjs) driving the real app with **live Gemini** (`gemini-3.8-flash`) on 2026-11-20. The skeleton screens in it are real AI wait time (about 8–9 s per Gemini call). To re-record:
 ```bash
 npm run dev                      # in one terminal
 BASE=http://localhost:5173 node scripts/record-demo.mjs

@@ -30,7 +30,7 @@ export function DiscoveryCard({ item }: { item: RecommendationItem }) {
           <p className="flex items-center gap-1.5 text-xs font-bold tracking-wide text-ink uppercase">
             <Sparkles size={13} aria-hidden /> Why it's for you
           </p>
-          <p className="mt-1 line-clamp-3 text-[14.5px] leading-snug text-charcoal">{recommendation.reason}</p>
+          <p className="mt-1 line-clamp-4 text-[14.5px] leading-snug text-charcoal">{recommendation.reason}</p>
         </div>
 
         <div className="mt-3.5">
