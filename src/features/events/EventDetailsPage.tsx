@@ -14,7 +14,7 @@ import { useSession } from '../../lib/session';
 import { useQueryClient } from '@tanstack/react-query';
 import { PeopleGoing } from '../social/PeopleGoing';
 import { EventCover } from './EventCover';
-import { CAMPUS_LABEL, calendarLinkFor, eventWhenLabel, SourceBadge } from './eventMeta';
+import { CAMPUS_LABEL, calendarLinkFor, eventWhenLabel, placeWithCampus, SourceBadge } from './eventMeta';
 
 const VISIBILITY_LABEL = { public: 'Public', approval: 'Approval required', invite: 'Invite only' } as const;
 const VERIFICATION_LABEL = {
@@ -79,7 +79,7 @@ function EventDetails({ event }: { event: EventView }) {
             <Fact
               icon={event.address ? <MapPin size={18} /> : <Lock size={18} />}
               label="Where"
-              value={event.address ? `${event.address} · ${CAMPUS_LABEL[event.campus]}` : `${event.venue} area · ${CAMPUS_LABEL[event.campus]}`}
+              value={event.address ? placeWithCampus(event.address, event.campus) : placeWithCampus(`${event.venue} area`, event.campus)}
               note={event.locationNote}
             />
             <Fact

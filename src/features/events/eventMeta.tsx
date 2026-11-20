@@ -13,10 +13,13 @@ export function eventWhenLabel(event: Pick<EventView, 'kind' | 'start' | 'end'>)
   return event.kind === 'ongoing' ? 'Ongoing · drop in anytime' : formatEventWhen(event.start, event.end);
 }
 
+/** "Room 210, Marietta Campus" — adds the campus only if the place doesn't already name it. */
+export function placeWithCampus(place: string, campus: EventView['campus']): string {
+  return place.includes(CAMPUS_LABEL[campus]) ? place : `${place}, ${CAMPUS_LABEL[campus]}`;
+}
+
 export function calendarLinkFor(event: EventView): string {
-  const place = event.address ?? event.venue;
-  const campus = place.includes(CAMPUS_LABEL[event.campus]) ? [] : [CAMPUS_LABEL[event.campus]];
-  const location = [place, ...campus, 'Kennesaw State University'].join(', ');
+  const location = `${placeWithCampus(event.address ?? event.venue, event.campus)}, Kennesaw State University`;
   return googleCalendarUrl({
     title: event.title,
     start: event.start,
