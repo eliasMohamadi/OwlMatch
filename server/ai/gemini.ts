@@ -15,6 +15,38 @@ interface GeminiResponseBody {
   error?: { message?: string };
 }
 
+interface ModelListBody {
+  models?: { name?: string; supportedGenerationMethods?: string[] }[];
+}
+
+/** The model in use. Starts as GEMINI_MODEL and changes only if that model no longer exists. */
+let activeModel: string = config.gemini.model;
+
+/**
+ * If the configured model was retired (HTTP 404), pick the newest available
+ * "flash" model that supports generateContent, so the demo keeps working.
+ */
+async function replacementModel(): Promise<string | null> {
+  try {
+    const response = await fetch(`${API_BASE}?pageSize=200`, { headers: { 'x-goog-api-key': config.gemini.apiKey } });
+    if (!response.ok) return null;
+    const { models = [] } = (await response.json()) as ModelListBody;
+    const candidates = models
+      .filter((m) => m.supportedGenerationMethods?.includes('generateContent'))
+      .map((m) => (m.name ?? '').replace(/^models\//, ''))
+      .filter((name) => name.includes('flash') && !/(lite|image|tts|audio|live|exp|preview)/.test(name))
+      .sort()
+      .reverse();
+    return candidates[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function currentModel(): string {
+  return activeModel;
+}
+
 export async function generateJson<T>(
   prompt: string,
   schema: z.ZodType<T, z.ZodTypeDef, unknown>,
@@ -25,7 +57,7 @@ export async function generateJson<T>(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), config.gemini.timeoutMs);
   try {
-    const response = await fetch(`${API_BASE}/${config.gemini.model}:generateContent`, {
+    const response = await fetch(`${API_BASE}/${activeModel}:generateContent`, {
       method: 'POST',
       signal: controller.signal,
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': config.gemini.apiKey },
@@ -35,6 +67,14 @@ export async function generateJson<T>(
       }),
     });
     const body = (await response.json()) as GeminiResponseBody;
+    if (response.status === 404 && activeModel === config.gemini.model) {
+      const replacement = await replacementModel();
+      if (replacement && replacement !== activeModel) {
+        console.warn(`[ai] model ${activeModel} unavailable; switching to ${replacement}`);
+        activeModel = replacement;
+        return generateJson(prompt, schema, options);
+      }
+    }
     if (!response.ok) return { ok: false, reason: `Gemini HTTP ${response.status}: ${body.error?.message ?? 'unknown error'}` };
 
     const text = body.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? '';

@@ -226,7 +226,7 @@ async function main() {
     [Lu.LuDatabase, 'Data', 'Student posts + KSU calendar feed next. No scraping of login-only sites.'],
     [Lu.LuCoins, 'Cost', 'One small Gemini call per refresh (≤10 events), cached; rules when offline.'],
     [Lu.LuRocket, 'Rollout', 'Pilot with Marietta student orgs, then KSU SSO.'],
-    [Lu.LuShieldCheck, 'Quality', '39 unit tests + full E2E demo test in CI; strict TS; documented.'],
+    [Lu.LuShieldCheck, 'Quality', '43 unit tests + full E2E demo test in CI; strict TS; documented.'],
   ];
   for (let i = 0; i < feas.length; i++) {
     const [Ic, head, body] = feas[i];
@@ -235,7 +235,7 @@ async function main() {
     s.addImage({ data: await icon(Ic), x: 5.33, y: y + 0.21, w: 0.26, h: 0.26 });
     s.addText([{ text: head, options: { bold: true, breakLine: true } }, { text: body, options: { color: HEX.charcoal } }], { x: 5.9, y, w: 3.6, h: 0.72, fontSize: 12, color: HEX.ink, valign: 'middle', margin: 0, isTextBox: true });
   }
-  s.addNotes('Feasibility. The stack is standard and the codebase is organized for handoff: one shared domain package, strict TypeScript, 39 unit tests plus an end-to-end test of this exact demo running in CI, and architecture docs. Data: student-posted events work today; sample events are clearly labeled; a KSU calendar feed is the next adapter, and we do not scrape login-protected sites. Cost: Gemini only sees a shortlist of ten events per refresh and results are cached. Rollout: pilot with Marietta student organizations, then university sign-in.');
+  s.addNotes('Feasibility. The stack is standard and the codebase is organized for handoff: one shared domain package, strict TypeScript, 43 unit tests plus an end-to-end test of this exact demo running in CI, and architecture docs. Data: student-posted events work today; sample events are clearly labeled; a KSU calendar feed is the next adapter, and we do not scrape login-protected sites. Cost: Gemini only sees a shortlist of ten events per refresh and results are cached. Rollout: pilot with Marietta student organizations, then university sign-in.');
 
   /* ---------------- 8. Impact & next ---------------- */
   s = pres.addSlide({ masterName: 'DARK', sectionTitle: 'Feasibility' });

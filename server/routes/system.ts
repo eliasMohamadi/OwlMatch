@@ -5,6 +5,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import type { HealthResponse } from '../../shared/types';
 import { config, isAiConfigured } from '../config';
+import { currentModel } from '../ai/gemini';
 import { HttpError, parseBody, route } from '../http';
 import { resetToSeed } from '../store/db';
 
@@ -12,7 +13,7 @@ export const systemRouter = Router();
 
 systemRouter.get(
   '/health',
-  route((): HealthResponse => ({ ok: true, ai: { configured: isAiConfigured(), model: config.gemini.model }, storage: 'json-file' })),
+  route((): HealthResponse => ({ ok: true, ai: { configured: isAiConfigured(), model: currentModel() }, storage: 'json-file' })),
 );
 
 /** Restores the demo dataset so the judged demo is reproducible. */
