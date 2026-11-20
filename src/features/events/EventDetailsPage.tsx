@@ -14,13 +14,14 @@ import { useSession } from '../../lib/session';
 import { useQueryClient } from '@tanstack/react-query';
 import { PeopleGoing } from '../social/PeopleGoing';
 import { EventCover } from './EventCover';
-import { CAMPUS_LABEL, calendarLinkFor, eventWhenLabel, placeWithCampus, SourceBadge } from './eventMeta';
+import { CAMPUS_LABEL, calendarLinkFor, eventWhenLabel, owlLifeRsvpLabel, placeWithCampus, SourceBadge } from './eventMeta';
 
 const VISIBILITY_LABEL = { public: 'Public', approval: 'Approval required', invite: 'Invite only' } as const;
 const VERIFICATION_LABEL = {
   'sample-data': 'Sample data — not a confirmed KSU listing',
   'demo-simulated': 'Simulated verification (demo mode) — org affiliation not verified',
   unverified: 'Unverified organizer',
+  'owl-life-listing': 'Imported from an Owl Life PDF export — a snapshot, not live',
 } as const;
 
 export function EventDetailsPage() {
@@ -86,12 +87,19 @@ function EventDetails({ event }: { event: EventView }) {
               icon={<Users size={18} />}
               label="Interest"
               value={`${event.interestedCount} interested on OwlMatch`}
-              note={event.capacity ? `Organizer capacity: ${event.capacity}` : 'No capacity listed'}
+              note={
+                event.external
+                  ? (owlLifeRsvpLabel(event) ?? 'Owl Life showed no RSVP count in the snapshot')
+                  : event.capacity
+                    ? `Organizer capacity: ${event.capacity}`
+                    : 'No capacity listed'
+              }
             />
             <Fact icon={<ShieldCheck size={18} />} label="Access" value={VISIBILITY_LABEL[event.visibility]} note={VERIFICATION_LABEL[event.organizer.verification]} />
           </div>
 
           <p className="mt-6 text-[16px] leading-relaxed whitespace-pre-line text-charcoal">{event.description}</p>
+          {event.external && <OwlLifeFacts external={event.external} />}
 
           {event.viewer.joinStatus && (
             <p className="mt-5 rounded-2xl bg-gold-soft px-4 py-3 text-sm font-medium text-ink">
@@ -114,7 +122,16 @@ function EventDetails({ event }: { event: EventView }) {
             <a href={calendarLinkFor(event)} target="_blank" rel="noreferrer" className={buttonStyles({ variant: 'dark', size: 'lg' })}>
               <CalendarPlus size={18} aria-hidden /> Add to Google Calendar
             </a>
-            {event.source.url ? (
+            {event.source.type === 'owl_life_pdf' && event.source.url ? (
+              <div className="sm:col-span-2">
+                <a href={event.source.url} target="_blank" rel="noreferrer" className={cn(buttonStyles({ variant: 'outline', size: 'lg' }), 'w-full')}>
+                  <ExternalLink size={18} aria-hidden /> Find it on Owl Life
+                </a>
+                <p className="mt-2 text-center text-xs text-muted">
+                  The export has no per-event links. Open Owl Life's upcoming activities and search for “{event.title}” to RSVP. {event.source.label}.
+                </p>
+              </div>
+            ) : event.source.url ? (
               <a href={event.source.url} target="_blank" rel="noreferrer" className={cn(buttonStyles({ variant: 'outline', size: 'lg' }), 'sm:col-span-2')}>
                 <ExternalLink size={18} aria-hidden /> View Official Event
               </a>
@@ -133,6 +150,23 @@ function EventDetails({ event }: { event: EventView }) {
 
       <ModerationActions event={event} />
     </article>
+  );
+}
+
+/** Extra facts printed on the Owl Life card, shown exactly as listed. */
+function OwlLifeFacts({ external }: { external: NonNullable<EventView['external']> }) {
+  const facts = [
+    external.level,
+    external.points !== null ? `${external.points} pts` : null,
+    ...external.badges,
+    ...external.requirements,
+    external.printedTimeZone ? `Times listed in ${external.printedTimeZone}, shown here in Eastern time` : null,
+  ].filter((fact): fact is string => Boolean(fact));
+  if (facts.length === 0) return null;
+  return (
+    <p className="mt-3 text-sm text-muted">
+      <span className="font-semibold text-charcoal">On Owl Life:</span> {facts.join(' · ')}
+    </p>
   );
 }
 

@@ -44,19 +44,53 @@ export function campusParts(date: Date): ZonedParts {
   };
 }
 
-/** Converts a campus wall-clock date/time ("2026-11-21", "19:30") to a UTC Date. */
-export function campusTimeToUtc(date: string, time: string): Date {
+const zoneFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function zonedParts(date: Date, timeZone: string): ZonedParts {
+  if (timeZone === CAMPUS_TIME_ZONE) return campusParts(date);
+  let formatter = zoneFormatters.get(timeZone);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      weekday: 'short',
+      hourCycle: 'h23',
+    });
+    zoneFormatters.set(timeZone, formatter);
+  }
+  const parts = Object.fromEntries(formatter.formatToParts(date).map((p) => [p.type, p.value]));
+  return {
+    year: Number(parts.year),
+    month: Number(parts.month),
+    day: Number(parts.day),
+    hour: Number(parts.hour),
+    minute: Number(parts.minute),
+    weekday: WEEKDAY_INDEX[parts.weekday] ?? 0,
+  };
+}
+
+/** Converts a wall-clock date/time ("2026-11-21", "19:30") in any IANA zone to a UTC Date. */
+export function zonedTimeToUtc(date: string, time: string, timeZone: string): Date {
   const [y, m, d] = date.split('-').map(Number);
   const [hh, mm] = time.split(':').map(Number);
   const asIfUtc = Date.UTC(y, m - 1, d, hh, mm);
   // Find the zone offset at that instant, then correct once more for DST edges.
   let guess = asIfUtc;
   for (let i = 0; i < 2; i += 1) {
-    const p = campusParts(new Date(guess));
+    const p = zonedParts(new Date(guess), timeZone);
     const shown = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute);
     guess += asIfUtc - shown;
   }
   return new Date(guess);
+}
+
+/** Converts a campus wall-clock date/time ("2026-11-21", "19:30") to a UTC Date. */
+export function campusTimeToUtc(date: string, time: string): Date {
+  return zonedTimeToUtc(date, time, CAMPUS_TIME_ZONE);
 }
 
 export function campusDateKey(date: Date): string {
@@ -121,6 +155,9 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', {
 export function formatEventWhen(startIso: string, endIso: string): string {
   const start = new Date(startIso);
   const end = new Date(endIso);
+  if (campusDateKey(start) !== campusDateKey(end)) {
+    return `${dateFormatter.format(start)} · ${timeFormatter.format(start)} – ${dateFormatter.format(end)} · ${timeFormatter.format(end)}`;
+  }
   return `${dateFormatter.format(start)} · ${timeFormatter.format(start)} – ${timeFormatter.format(end)}`;
 }
 

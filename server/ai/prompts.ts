@@ -1,3 +1,4 @@
+import { isDropIn } from '../../shared/eventPlace';
 import { INTEREST_LIST } from '../../shared/interests';
 import { formatEventWhen } from '../../shared/time';
 import type { CampusEvent, OnboardingInput, Student } from '../../shared/types';
@@ -28,6 +29,12 @@ Return JSON exactly like:
 Infer only what the answers support. Do not invent hobbies. A major or degree name (e.g. "software engineering student") describes what they study, not a hobby: do not infer an interest from it.`;
 }
 
+const LISTING_LABEL: Record<CampusEvent['source']['type'], string> = {
+  sample: 'OwlMatch sample data',
+  student: 'posted by a student on OwlMatch',
+  owl_life_pdf: 'real KSU Owl Life listing (snapshot; no description available)',
+};
+
 function compactEvent(event: CampusEvent) {
   return {
     id: event.id,
@@ -36,11 +43,13 @@ function compactEvent(event: CampusEvent) {
     tags: event.tags,
     description: event.description.slice(0, DESCRIPTION_LIMIT),
     campus: event.campus,
-    when: event.kind === 'ongoing' ? 'ongoing / drop-in' : formatEventWhen(event.start, event.end),
+    venue: event.venue,
+    when: isDropIn(event) ? 'ongoing / drop-in' : formatEventWhen(event.start, event.end),
     groupSize: event.groupSize,
     energy: event.energy,
     beginnerFriendly: event.beginnerFriendly,
     hostedByStudent: event.organizer.kind === 'student',
+    listing: LISTING_LABEL[event.source.type],
   };
 }
 

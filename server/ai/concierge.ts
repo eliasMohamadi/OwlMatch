@@ -1,3 +1,4 @@
+import { matchesCampus } from '../../shared/eventPlace';
 import { conciergeIntentSchema, conciergeReplySchema } from '../../shared/schemas';
 import { campusParts, inTimeWindow } from '../../shared/time';
 import { filterEligible, learnFromSwipes, rankEvents, toRuleRecommendation } from '../../shared/ranking';
@@ -17,7 +18,7 @@ function applyIntent(events: CampusEvent[], intent: ConciergeIntent, now: Date):
     e.kind === 'ongoing' ||
     (inTimeWindow(new Date(e.start), intent.timeWindow, now) &&
       (intent.afterHour === null || campusParts(new Date(e.start)).hour >= intent.afterHour));
-  const byCampus = (e: CampusEvent) => !intent.campus || intent.campus === 'both' || e.campus === intent.campus;
+  const byCampus = (e: CampusEvent) => !intent.campus || matchesCampus(e, intent.campus, { explicit: true });
   const byBeginner = (e: CampusEvent) => !intent.beginnerFriendly || e.beginnerFriendly;
 
   const attempts: { label: string | null; test: (e: CampusEvent) => boolean }[] = [

@@ -27,6 +27,7 @@ OwlMatch is a mobile-first, AI-powered campus discovery app for Kennesaw State U
 | Social | Interest counts come from real swipes. "Find people to go with" uses mutual opt-in, shares first name and major only, and has a global privacy switch |
 | Calendar | A prefilled Google Calendar link with correct UTC times and `ctz=America/New_York` |
 | My Matches | Interested, hosting (with join-request approvals) and past events |
+| Owl Life import | Real KSU activities from a PDF export of Owl Life: `npm run import:owl-life -- <pdf>`. Each import is labeled "Owl Life listing", RSVP counts are shown as a dated snapshot, past listings are hidden, and a new export replaces the old one ([details](docs/OWL_LIFE_IMPORT.md)) |
 | Demo mode | A clearly labeled demo-student switcher (`?as=<id>` per tab) and a one-click demo data reset |
 
 ## Stack
@@ -54,6 +55,7 @@ Open the printed web URL. The default demo student is **Jordan**. Use the avatar
 | `npm start` | Serve the built app and API from one Node process (`NODE_ENV=production`) |
 | `npm test` | Vitest unit/component tests |
 | `npm run test:e2e` | Playwright demo-story test (isolated port and data directory) |
+| `npm run import:owl-life -- <pdf>` | Import an Owl Life PDF export (`--dry-run` to preview) |
 | `npm run demo:reset` | Restore the seeded demo data (dates are relative to today) |
 
 ### Environment variables
@@ -90,12 +92,14 @@ tests/      Vitest      e2e/   Playwright      docs/   Architecture, AI, data mo
 - [Data model](docs/DATA_MODEL.md)
 - [Decisions & trade-offs](docs/DECISIONS.md)
 - [Demo script](docs/DEMO.md): the exact reproducible demo
+- [Owl Life PDF import](docs/OWL_LIFE_IMPORT.md): the reusable ingestion workflow and its report
 - [it. track usage](docs/IT_TRACK.md)
 
 ## What's real vs. simulated
 
 - **Real:** Gemini calls (when a key is set), validation of model output, rule-based fallback ranking, swipe persistence and learning, student-created events, image upload, interest counts, mutual opt-in, and Google Calendar links.
-- **Simulated / sample:** All seeded events are **sample data** with invented schedules, labeled "Sample event" in the UI. Demo students stand in for KSU sign-in, and nothing is verified. Organization affiliation on student events is shown as a claim ("simulated verification"). There is no live KSU calendar, Owl Life or Handshake integration yet (see Decisions).
+- **Real, as a snapshot:** activities imported from an Owl Life PDF export. Their title, dates, location, organizers and RSVP counts are as of the export time, and the app never presents them as live.
+- **Simulated / sample:** All seeded events are **sample data** with invented schedules, labeled "Sample event" in the UI. Demo students stand in for KSU sign-in, and nothing is verified. Organization affiliation on student events is shown as a claim ("simulated verification"). There is no live KSU calendar, Owl Life or Handshake integration. Owl Life data comes only from PDF exports (see Decisions).
 
 ## License
 

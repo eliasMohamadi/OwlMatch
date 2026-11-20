@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "demo:reset": "tsx scripts/reset-demo.ts"
+    "demo:reset": "tsx scripts/reset-demo.ts",
+    "import:owl-life": "tsx scripts/import-owl-life.ts"
   },
   "license": "MIT",
   "description": "AI-powered campus discovery and social connection for KSU students (student-built hackathon project).",
@@ -39,6 +40,8 @@
     "concurrently": "^10.0.7",
     "cross-env": "^10.1.0",
     "jsdom": "^29.1.1",
+    "pdfjs-dist": "^4.10.38",
+    "sharp": "^0.34.4",
     "tailwindcss": "^4.3.5",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",

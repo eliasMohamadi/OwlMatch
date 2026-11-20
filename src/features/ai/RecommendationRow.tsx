@@ -4,7 +4,7 @@ import type { RecommendationItem } from '@shared/types';
 import { useToast } from '../../components/ui/Toast';
 import { useSwipe } from '../../lib/queries';
 import { EventCover } from '../events/EventCover';
-import { eventWhenLabel, MatchScore } from '../events/eventMeta';
+import { campusShort, eventWhenLabel, MatchScore } from '../events/eventMeta';
 
 /** Compact recommendation card used by the concierge and the comparison view. */
 export function RecommendationRow({ item, showSave = true }: { item: RecommendationItem; showSave?: boolean }) {
@@ -24,7 +24,7 @@ export function RecommendationRow({ item, showSave = true }: { item: Recommendat
             {event.title}
           </Link>
           <p className="mt-0.5 truncate text-xs text-muted">
-            {eventWhenLabel(event)} · {event.campus === 'marietta' ? 'Marietta' : 'Kennesaw'}
+            {[eventWhenLabel(event), campusShort(event.campus)].filter(Boolean).join(' · ')}
           </p>
           <div className="mt-1.5">
             <MatchScore recommendation={recommendation} compact />

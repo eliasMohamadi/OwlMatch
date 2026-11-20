@@ -3,6 +3,7 @@ import path from 'node:path';
 import { databaseSchema } from '../../shared/schemas';
 import type { Database } from '../../shared/types';
 import { config } from '../config';
+import { applyOwlLifeImport, owlLifeImportVersion, readOwlLifeImport } from '../ingest/owlLife/importStore';
 import { createSeedDatabase } from './seed';
 
 /**
@@ -10,12 +11,16 @@ import { createSeedDatabase } from './seed';
  * writes it atomically after each mutation, so two demo students on different
  * tabs share the same state and nothing is lost on restart.
  *
+ * Imported listings (Owl Life PDF snapshots) are layered on top: whenever the
+ * import file changes, its events replace the previous import's events.
+ *
  * Swapping in Supabase means re-implementing `read`/`mutate` only; every
  * caller goes through these two functions.
  */
 const dbFile = () => path.join(config.dataDir, 'db.json');
 
 let cache: Database | null = null;
+let appliedImportVersion = -1;
 
 function persist(db: Database): void {
   mkdirSync(config.dataDir, { recursive: true });
@@ -24,19 +29,33 @@ function persist(db: Database): void {
   renameSync(tmp, dbFile());
 }
 
+function withImports(db: Database): Database {
+  appliedImportVersion = owlLifeImportVersion();
+  return applyOwlLifeImport(db, readOwlLifeImport());
+}
+
 function load(): Database {
   if (existsSync(dbFile())) {
     const parsed = databaseSchema.safeParse(JSON.parse(readFileSync(dbFile(), 'utf8')));
-    if (parsed.success) return parsed.data;
+    if (parsed.success) {
+      const db = withImports(parsed.data);
+      persist(db);
+      return db;
+    }
     console.warn('[store] db.json failed validation; reseeding demo data');
   }
-  const seeded = createSeedDatabase(new Date());
+  const seeded = withImports(createSeedDatabase(new Date()));
   persist(seeded);
   return seeded;
 }
 
 export function read(): Readonly<Database> {
   cache ??= load();
+  // A new import was written by `npm run import:owl-life`; layer it in without a restart.
+  if (owlLifeImportVersion() !== appliedImportVersion) {
+    cache = withImports(cache);
+    persist(cache);
+  }
   return cache;
 }
 
@@ -49,8 +68,9 @@ export function mutate<T>(change: (db: Database) => T): T {
   return result;
 }
 
+/** Restores the demo students and sample events, keeping the latest imported listings. */
 export function resetToSeed(now = new Date()): Database {
-  const seeded = createSeedDatabase(now);
+  const seeded = withImports(createSeedDatabase(now));
   persist(seeded);
   cache = seeded;
   return seeded;

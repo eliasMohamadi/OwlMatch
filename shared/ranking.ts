@@ -1,3 +1,4 @@
+import { matchesCampus } from './eventPlace';
 import { INTERESTS, type InterestId } from './interests';
 import { formatList, tokenize } from './text';
 import { dayPartOf, inTimeWindow, isWeekend } from './time';
@@ -190,7 +191,7 @@ export function filterEligible(events: readonly CampusEvent[], ctx: EligibilityC
     if (event.organizer.studentId === student.id) return false;
     if (new Date(event.end).getTime() <= now.getTime()) return false;
     if (!ctx.includeSwiped && ctx.swipedEventIds.has(event.id)) return false;
-    if (campus !== 'both' && event.campus !== campus) return false;
+    if (!matchesCampus(event, campus)) return false;
     if (filters.categories?.length && !event.categories.some((c) => filters.categories?.includes(c))) return false;
     if (filters.kind && filters.kind !== 'all' && event.kind !== filters.kind) return false;
     if (filters.when && filters.when !== 'any' && event.kind === 'event' && !inTimeWindow(new Date(event.start), filters.when, now)) return false;

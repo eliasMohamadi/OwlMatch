@@ -8,6 +8,11 @@ import { INTEREST_IDS } from './interests';
 
 export const interestIdSchema = z.enum(INTEREST_IDS);
 export const campusSchema = z.enum(['kennesaw', 'marietta']);
+/**
+ * Where an event happens. Students post to a physical campus; imported listings
+ * can also be online, or name a place we can't honestly map to a campus.
+ */
+export const eventCampusSchema = z.enum(['kennesaw', 'marietta', 'online', 'unspecified']);
 export const campusPreferenceSchema = z.enum(['kennesaw', 'marietta', 'both']);
 export const availabilitySchema = z.enum(['weekdays', 'weekends', 'mornings', 'afternoons', 'evenings']);
 export const groupSizePreferenceSchema = z.enum(['small', 'large', 'any']);
@@ -62,14 +67,44 @@ export const organizerSchema = z.object({
   kind: z.enum(['official', 'organization', 'student']),
   studentId: z.string().nullable(),
   /** Never "verified" in demo mode: we only label what we can honestly say. */
-  verification: z.enum(['sample-data', 'demo-simulated', 'unverified']),
+  verification: z.enum(['sample-data', 'demo-simulated', 'unverified', 'owl-life-listing']),
 });
 
+export const OWL_LIFE_PDF_SOURCE = 'owl_life_pdf';
+
 export const eventSourceSchema = z.object({
-  type: z.enum(['sample', 'student']),
+  type: z.enum(['sample', 'student', OWL_LIFE_PDF_SOURCE]),
   label: z.string(),
   url: z.string().nullable(),
   verifiedAt: z.string().nullable(),
+});
+
+/**
+ * Facts captured from an external listing at a point in time. Kept apart from
+ * OwlMatch's own counts: `snapshotRsvpCount` is what Owl Life showed when the
+ * export was made, never live availability.
+ */
+export const externalListingSchema = z.object({
+  provider: z.literal('owl_life'),
+  snapshotAt: z.string(),
+  snapshotRsvpCount: z.number().int().nonnegative().nullable(),
+  snapshotRsvpLimit: z.number().int().positive().nullable(),
+  points: z.number().int().nonnegative().nullable(),
+  level: z.string().nullable(),
+  competencies: z.array(z.string()),
+  badges: z.array(z.string()),
+  requirements: z.array(z.string()),
+  /** Organizer names exactly as printed (Suitable truncates long names with "..."). */
+  organizers: z.array(z.string()),
+  delivery: z.enum(['in-person', 'online', 'hybrid', 'unknown']),
+  /** Title exactly as printed, when the display title was cleaned up. */
+  originalTitle: z.string().nullable(),
+  /** Time zone the listing printed, when it wasn't campus time (e.g. "CST"). */
+  printedTimeZone: z.string().nullable(),
+  /** Why the OwlMatch categories were chosen: keywords in the listing, competency codes, or a default. */
+  categoryBasis: z.enum(['keywords', 'competencies', 'default']),
+  pdfPages: z.array(z.number().int().positive()),
+  fingerprint: z.string(),
 });
 
 export const reportSchema = z.object({
@@ -85,7 +120,7 @@ export const campusEventSchema = z.object({
   categories: z.array(interestIdSchema).min(1),
   tags: z.array(z.string()),
   kind: eventKindSchema,
-  campus: campusSchema,
+  campus: eventCampusSchema,
   venue: z.string(),
   /** Precise location; redacted for approval-only events until the host approves. */
   address: z.string(),
@@ -103,6 +138,8 @@ export const campusEventSchema = z.object({
   createdAt: z.string(),
   status: z.enum(['active', 'removed']),
   reports: z.array(reportSchema),
+  /** Present only on imported listings. */
+  external: externalListingSchema.optional(),
 });
 
 const MAX_TITLE = 80;
@@ -179,7 +216,8 @@ export const aiRankingResponseSchema = z.object({
         score: z.number(),
         reason: z.string().min(1).max(400),
         matchedInterests: z.array(z.string().max(40)).max(6).default([]),
-        socialNote: z.string().max(200).optional(),
+        // Models sometimes send null for "no note"; treat it like an omitted field.
+        socialNote: z.string().max(200).nullish(),
       }),
     )
     .max(30),

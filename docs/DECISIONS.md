@@ -17,6 +17,8 @@ The UI shows "AI match NN%" only for Gemini scores, and "Match NN% · rules" for
 ### 5. Sample data, clearly labeled
 We found no documented public KSU events API we could rely on in the time available. Owl Life and Handshake require login, and we did not scrape them. **Decision:** seed 18 plausible sample activities with dates relative to "now", each with `source.type = "sample"`, a "Sample event" badge, and no fake official links. **Consequence:** the demo always has upcoming events, and no fictional event is presented as a real KSU listing. `source.url` and `verifiedAt` are ready for a future ingestion adapter.
 
+**Update:** real Owl Life activities can now be imported from a PDF export the student downloads themselves (`npm run import:owl-life`). We still don't scrape or log in to Owl Life. Each import is a labeled snapshot, and sample events remain alongside it. See [OWL_LIFE_IMPORT.md](OWL_LIFE_IMPORT.md).
+
 ### 6. Demo accounts instead of authentication
 Real KSU SSO isn't available to us. **Decision:** use five demo students and a labeled switcher. `?as=<id>` lets two tabs act as two students. A KSU email is never treated as verification, and organization affiliation is shown as "simulated verification". **Consequence:** this must be replaced with SSO before any real use. API calls trust the `studentId` they're given.
 

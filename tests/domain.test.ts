@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { googleCalendarUrl, toCalendarTimestamp } from '../shared/calendar';
 import { validateNewEvent } from '../shared/eventValidation';
+import { aiRankingResponseSchema } from '../shared/schemas';
 import { campusTimeToUtc, inTimeWindow } from '../shared/time';
 import { heuristicIntent, heuristicProfile } from '../server/ai/heuristics';
 import type { NewEventInput } from '../shared/types';
@@ -98,5 +99,12 @@ describe('heuristic fallbacks (used when Gemini is unavailable)', () => {
     expect(intent.timeWindow).toBe('weekend');
     expect(intent.afterHour).toBe(17);
     expect(intent.categories).toContain('gaming');
+  });
+});
+
+describe('Gemini ranking contract', () => {
+  it('accepts a null socialNote, which models send for "no note"', () => {
+    const parsed = aiRankingResponseSchema.safeParse({ rankings: [{ eventId: 'e1', score: 80, reason: 'Fits you.', socialNote: null }] });
+    expect(parsed.success).toBe(true);
   });
 });

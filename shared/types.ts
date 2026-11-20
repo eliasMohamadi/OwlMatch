@@ -9,6 +9,8 @@ import type {
   connectionSchema,
   databaseSchema,
   discoverFiltersSchema,
+  eventCampusSchema,
+  externalListingSchema,
   joinRequestSchema,
   newEventInputSchema,
   onboardingInputSchema,
@@ -20,6 +22,8 @@ import type {
 export type { InterestId } from './interests';
 
 export type Campus = z.infer<typeof campusSchema>;
+export type EventCampus = z.infer<typeof eventCampusSchema>;
+export type ExternalListing = z.infer<typeof externalListingSchema>;
 export type CampusPreference = z.infer<typeof campusPreferenceSchema>;
 export type Availability = z.infer<typeof availabilitySchema>;
 export type AiProfile = z.infer<typeof aiProfileSchema>;
