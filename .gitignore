@@ -9,3 +9,4 @@ playwright-report/
 .DS_Store
 .qa/
 .e2e-data/
+docs/demo-video/*.webm

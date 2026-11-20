@@ -40,7 +40,16 @@ Recommended capture: a browser window at **430×932** (mobile layout) for scenes
 | 1:16–1:26 | Concierge answer, then a glance at Why AI? | "She can also just ask, and the concierge answers from OwlMatch's own events." |
 | 1:26–1:30 | Welcome/logo | "OwlMatch. Discover your interests. Find your people." |
 
-### Recording checklist
+### Automated recording (already produced)
+`docs/demo-video/owlmatch-demo.mp4` (~65 s, 430×932, captioned, no audio) was recorded by [`scripts/record-demo.mjs`](../scripts/record-demo.mjs) driving the real app. It recorded the **rule-based fallback** path, because no Gemini key was configured at recording time. Re-record with the key in place:
+```bash
+npm run dev                      # in one terminal
+BASE=http://localhost:5173 node scripts/record-demo.mjs
+ffmpeg -i docs/demo-video/owlmatch-demo.webm -c:v libx264 -pix_fmt yuv420p -vf scale=860:1864 -r 30 docs/demo-video/owlmatch-demo.mp4
+```
+The Google Calendar scene shows the in-app button rather than opening Google, because a fresh recording browser isn't signed in to Google.
+
+### Recording checklist (narrated version)
 - [ ] Demo data reset; `/api/health` shows Gemini configured
 - [ ] Browser zoom 100%, bookmarks bar hidden, notifications off
 - [ ] Two tabs ready (`?as=stu-jordan`, `?as=stu-maya`)
