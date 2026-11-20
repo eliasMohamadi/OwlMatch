@@ -1,6 +1,21 @@
 {
   "name": "owlmatch",
   "version": "1.0.0",
+  "exports": {
+    ".": "./server/index.ts",
+    "./web": "./src/main.tsx",
+    "./shared/calendar": "./shared/calendar.ts",
+    "./shared/eventPlace": "./shared/eventPlace.ts",
+    "./shared/eventValidation": "./shared/eventValidation.ts",
+    "./shared/interests": "./shared/interests.ts",
+    "./shared/ranking": "./shared/ranking.ts",
+    "./shared/schemas": "./shared/schemas.ts",
+    "./shared/text": "./shared/text.ts",
+    "./shared/time": "./shared/time.ts",
+    "./shared/types": "./shared/types.ts",
+    "./scripts/import-owl-life": "./scripts/import-owl-life.ts",
+    "./scripts/reset-demo": "./scripts/reset-demo.ts"
+  },
   "scripts": {
     "dev": "concurrently -k -n api,web -c yellow,cyan \"npm:dev:api\" \"npm:dev:web\"",
     "dev:api": "tsx watch server/index.ts",

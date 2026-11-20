@@ -36,6 +36,14 @@ Student 1───* Swipe *───1 CampusEvent *───1 Organizer (embedde
 | `EventView.address` | `null` unless the event is public, the viewer is the host, or the viewer's join request is approved |
 | Match score | `shared/ranking.ts` (rules) or Gemini re-rank (clamped) |
 
+## Going Together visibility
+
+- [PeopleGoing](../src/features/social/PeopleGoing.tsx) renders the opt-in in event details and the match sheet. Its toggle calls the events API.
+- [setConnection](../server/services/eventActions.ts#L84) records or removes the opt-in. [goingTogetherIds](../server/services/eventViews.ts) supplies the eligible attendee IDs for event counts and the people endpoint. Eligibility requires an interested swipe, an event opt-in, and social discovery enabled.
+- [GET /events/:id/people](../server/routes/events.ts) returns no profiles until the viewer is eligible. It excludes the viewer and lists eligible peers. A student host is listed separately for eligible viewers, without needing an attendee opt-in.
+- The endpoint returns each listed student's ID, first name, major, year, avatar color, shared interest labels, and host status. Update the endpoint, UI copy, and visibility tests together when changing these fields.
+- [Event action tests](../tests/eventActions.test.ts) cover the interest requirement, the global discovery setting, and clearing the opt-in when a student passes on an event.
+
 ## Storage
 
 `server/data/db.json` (gitignored) is written atomically (tmp file + rename) after each mutation. Uploads go in `server/data/uploads/`. The latest Owl Life import is kept separately in `server/data/imports/owl_life_pdf.json` and layered onto the database on load, on reset and whenever the file changes. Supabase mapping: each entity above becomes one table. `Swipe`, `Connection` and `JoinRequest` get a composite primary key `(student_id, event_id)`. Row-level security would replace `toEventView`'s viewer checks.
