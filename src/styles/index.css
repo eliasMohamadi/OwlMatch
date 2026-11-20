@@ -1,0 +1,99 @@
+@import 'tailwindcss';
+
+/*
+ * OwlMatch design tokens. KSU-inspired palette: white dominates, black carries
+ * type and navigation, gold is reserved for primary actions, selection and AI.
+ */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-gold: #ffc629;
+  --color-gold-soft: #fff4d1;
+  --color-gold-deep: #e0a800;
+  --color-ink: #000000;
+  --color-charcoal: #171717;
+  --color-paper: #fafaf8;
+  --color-surface: #f5f5f2;
+  --color-line: #e8e8e3;
+  --color-muted: #666666;
+  --color-neutral: #b0b3b2;
+  --color-success: #15803d;
+  --color-danger: #c2410c;
+
+  --radius-card: 1.5rem;
+  --radius-control: 0.875rem;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 12px 32px -12px rgb(0 0 0 / 0.18);
+  --shadow-float: 0 20px 50px -20px rgb(0 0 0 / 0.35);
+
+  --animate-pop: pop 180ms ease-out;
+  --animate-fade-up: fade-up 260ms ease-out both;
+  --animate-shimmer: shimmer 1.4s linear infinite;
+}
+
+@keyframes pop {
+  0% { transform: scale(0.96); }
+  60% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  from { background-position: -400px 0; }
+  to { background-position: 400px 0; }
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-paper font-sans text-charcoal antialiased;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-gold);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .skeleton {
+    background: linear-gradient(90deg, var(--color-surface) 0%, #ecece7 50%, var(--color-surface) 100%);
+    background-size: 800px 100%;
+    animation: var(--animate-shimmer);
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
