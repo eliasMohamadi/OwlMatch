@@ -1,5 +1,5 @@
 import { INTERESTS, type InterestId } from './interests';
-import { tokenize } from './text';
+import { formatList, tokenize } from './text';
 import { dayPartOf, inTimeWindow, isWeekend } from './time';
 import type { CampusEvent, DiscoverFilters, Recommendation, ScoreBreakdown, Student, Swipe } from './types';
 
@@ -213,9 +213,9 @@ export function explainScore(student: Student, scored: ScoredEvent, signals: Fee
   if (matchedInterests.length > 0) {
     const labels = matchedInterests.map((id) => INTERESTS[id].shortLabel.toLowerCase());
     const fromAi = matchedInterests.some((id) => !student.interests.includes(id));
-    parts.push(fromAi ? `Fits what you described (${labels.join(', ')})` : `Matches your interest in ${labels.join(' and ')}`);
+    parts.push(fromAi ? `Fits what you described: ${formatList(labels)}` : `Matches your interest in ${formatList(labels)}`);
   } else if (keywordHits.length > 0) {
-    parts.push(`Mentions things you care about: ${keywordHits.slice(0, 3).join(', ')}`);
+    parts.push(`Mentions things you care about: ${formatList(keywordHits.slice(0, 3))}`);
   } else {
     parts.push('Something outside your usual picks');
   }

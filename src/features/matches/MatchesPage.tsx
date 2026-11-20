@@ -93,7 +93,7 @@ function MatchRow({ event }: { event: EventView }) {
         <Link to={`/events/${event.id}`} className="line-clamp-2 leading-snug font-bold text-ink hover:underline">
           {event.title}
         </Link>
-        <p className="mt-0.5 truncate text-sm text-muted">{eventWhenLabel(event)}</p>
+        <p className="mt-0.5 text-sm text-muted">{eventWhenLabel(event)}</p>
         <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-2">
           {event.viewer.isHost && <Badge tone="dark">Hosting</Badge>}
           {event.viewer.optedIn && <Badge tone="gold">Going together</Badge>}

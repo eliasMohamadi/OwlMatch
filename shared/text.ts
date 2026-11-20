@@ -33,3 +33,10 @@ export function includesAny(text: string, phrases: readonly string[]): boolean {
   const lowered = text.toLowerCase();
   return phrases.some((phrase) => lowered.includes(phrase));
 }
+
+const listFormatter = new Intl.ListFormat('en', { style: 'long', type: 'conjunction' });
+
+/** ["gaming", "social", "tech"] → "gaming, social, and tech". */
+export function formatList(items: readonly string[]): string {
+  return listFormatter.format(items);
+}

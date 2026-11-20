@@ -3,6 +3,7 @@ import { campusParts, inTimeWindow } from '../../shared/time';
 import { filterEligible, learnFromSwipes, rankEvents, toRuleRecommendation } from '../../shared/ranking';
 import type { CampusEvent, ConciergeIntent, ConciergeResponse, Database, Student } from '../../shared/types';
 import { INTERESTS } from '../../shared/interests';
+import { formatList } from '../../shared/text';
 import { toEventView } from '../services/eventViews';
 import { generateJson } from './gemini';
 import { heuristicIntent } from './heuristics';
@@ -75,7 +76,7 @@ export async function askConcierge(db: Readonly<Database>, student: Student, mes
 
 function fallbackReply(intent: ConciergeIntent, count: number, relaxed: string[]): string {
   if (count === 0) return "I couldn't find anything that fits yet. Try a different campus or time, or check back as students post new events.";
-  const topics = intent.categories.map((id) => INTERESTS[id].shortLabel.toLowerCase()).join(', ');
+  const topics = formatList(intent.categories.map((id) => INTERESTS[id].shortLabel.toLowerCase()));
   const where = intent.campus && intent.campus !== 'both' ? ` on the ${intent.campus[0].toUpperCase()}${intent.campus.slice(1)} campus` : '';
   const relaxNote = relaxed.length ? ` Nothing matched exactly, so I loosened the ${relaxed.join(' and ')} filter.` : '';
   return `Here ${count === 1 ? 'is 1 pick' : `are ${count} picks`}${topics ? ` for ${topics}` : ''}${where}.${relaxNote}`;
