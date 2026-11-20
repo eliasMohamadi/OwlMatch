@@ -115,7 +115,12 @@ export function SwipeDeck({ items, onDecide, onOpen }: SwipeDeckProps) {
           .reverse()}
       </div>
 
-      <div className="mt-7 flex items-center justify-center gap-5" role="group" aria-label="Card actions">
+      {/* On phones the actions stay pinned above the tab bar so they're reachable on short screens. */}
+      <div
+        className="sticky bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-10 -mx-4 mt-7 flex items-center justify-center gap-5 bg-gradient-to-t from-paper via-paper/90 to-transparent px-4 pt-3 pb-1 md:static md:mx-0 md:bg-none md:p-0"
+        role="group"
+        aria-label="Card actions"
+      >
         <DeckButton label="Pass" onClick={() => void commit('passed')} className="h-16 w-16 border border-line bg-white text-ink hover:border-ink/30">
           <X size={28} strokeWidth={2.5} />
         </DeckButton>
