@@ -1,6 +1,7 @@
 // Runs the demo story against the running app and saves the deck screenshots to docs/screenshots.
 // Usage: BASE=http://localhost:5173 node scripts/capture-screenshots.mjs   (then: cd presentation && npm run build)
 import path from 'node:path';
+import { chromium } from '@playwright/test';
 const base = process.env.BASE ?? 'http://localhost:5173';
 const out = 'docs/screenshots';
 const browser = await chromium.launch();
