@@ -53,7 +53,9 @@ function Concierge() {
   const [pending, setPending] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), [messages, pending]);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages, pending]);
 
   const ask = async (text: string) => {
     const message = text.trim();

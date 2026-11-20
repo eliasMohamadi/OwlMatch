@@ -11,7 +11,7 @@ export default defineConfig({
     alias: { '@shared': fileURLToPath(new URL('./shared', import.meta.url)) },
   },
   server: {
-    port: 5173,
+    port: Number(process.env.WEB_PORT ?? 5173),
     proxy: { '/api': API_ORIGIN, '/uploads': API_ORIGIN },
   },
   test: {

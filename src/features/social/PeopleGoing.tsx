@@ -10,12 +10,14 @@ import { useConnect, useCurrentStudent, usePeople } from '../../lib/queries';
  */
 export function PeopleGoing({ event }: { event: EventView }) {
   const isInterested = event.viewer.decision === 'interested';
-  const { data: people, isLoading } = usePeople(event.id, isInterested || event.viewer.isHost);
+  const { data: people, isLoading, isFetching } = usePeople(event.id, isInterested || event.viewer.isHost);
   const { data: student } = useCurrentStudent();
   const connect = useConnect();
   const toast = useToast();
 
-  const optedIn = people?.viewerOptedIn ?? event.viewer.optedIn;
+  // Optimistic: reflect the toggle immediately while the server confirms.
+  const settling = (connect.isPending || isFetching) && connect.variables;
+  const optedIn = settling ? connect.variables.optIn : (people?.viewerOptedIn ?? event.viewer.optedIn);
   const socialHidden = student?.socialVisible === false;
 
   const toggle = (optIn: boolean) =>

@@ -14,7 +14,9 @@ export function eventWhenLabel(event: Pick<EventView, 'kind' | 'start' | 'end'>)
 }
 
 export function calendarLinkFor(event: EventView): string {
-  const location = [event.address ?? event.venue, CAMPUS_LABEL[event.campus], 'Kennesaw State University'].join(', ');
+  const place = event.address ?? event.venue;
+  const campus = place.includes(CAMPUS_LABEL[event.campus]) ? [] : [CAMPUS_LABEL[event.campus]];
+  const location = [place, ...campus, 'Kennesaw State University'].join(', ');
   return googleCalendarUrl({
     title: event.title,
     start: event.start,
