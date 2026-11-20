@@ -16,8 +16,15 @@ const NEW_PHRASES = ['try something new', 'new hobby', 'beginner', 'never tried'
 
 const MAX_KEYWORDS = 10;
 
+/** Majors that contain interest words ("software engineering") should not imply hobbies. */
+const MAJOR_PHRASES: [RegExp, string][] = [
+  [/software engineering/gi, 'software'],
+  [/computer engineering/gi, 'computer'],
+  [/computer science/gi, 'computer'],
+];
+
 export function heuristicProfile(input: OnboardingInput, now: Date): AiProfile {
-  const text = input.about;
+  const text = MAJOR_PHRASES.reduce((t, [pattern, replacement]) => t.replace(pattern, replacement), input.about);
   const mentioned = interestsMentioned(text).filter((id) => !input.interests.includes(id));
   const knownKeywords = new Set(INTEREST_LIST.flatMap((i) => i.keywords));
   const keywords = [...new Set(tokenize(text).filter((t) => knownKeywords.has(t)))].slice(0, MAX_KEYWORDS);

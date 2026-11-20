@@ -41,7 +41,7 @@ describe('SwipeDeck accessibility', () => {
     const onDecide = vi.fn();
     const onOpen = vi.fn();
     render(<SwipeDeck items={items} onDecide={onDecide} onOpen={onOpen} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Interested', exact: true }));
+    await userEvent.click(screen.getByRole('button', { name: /^Interested$/ }));
     expect(onDecide).toHaveBeenCalledWith(items[0], 'interested');
     await userEvent.click(screen.getByRole('button', { name: 'Details' }));
     expect(onOpen).toHaveBeenCalledWith(items[0]);

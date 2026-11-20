@@ -17,7 +17,9 @@ export const SCORE_WEIGHTS: ScoreBreakdown = {
 };
 
 /** An explicitly chosen interest outranks one the AI inferred from free text. */
-const INFERRED_INTEREST_CREDIT = 0.7;
+const FIRST_MATCH_CREDIT = 0.75;
+const INFERRED_INTEREST_CREDIT = 0.55;
+/** Each additional overlapping category; events matching several of a student's interests rank higher. */
 const EXTRA_CATEGORY_BONUS = 0.25;
 /** Keyword hits needed for a full keyword score. */
 const KEYWORD_SATURATION = 3;
@@ -76,7 +78,7 @@ function interestScore(student: Student, event: CampusEvent): { score: number; m
     (c) => !explicit.includes(c) && student.aiProfile?.inferredInterests.includes(c),
   );
   if (explicit.length === 0 && inferred.length === 0) return { score: 0, matched: [] };
-  const base = explicit.length > 0 ? 1 : INFERRED_INTEREST_CREDIT;
+  const base = explicit.length > 0 ? FIRST_MATCH_CREDIT : INFERRED_INTEREST_CREDIT;
   const extras = explicit.length + inferred.length - 1;
   return { score: Math.min(1, base + extras * EXTRA_CATEGORY_BONUS), matched: [...explicit, ...inferred] };
 }
@@ -102,7 +104,7 @@ function socialScore(student: Student, event: CampusEvent): number {
   if (groupPref === 'small') signals.push(event.groupSize === 'large' ? 0 : event.groupSize === 'small' ? 1 : 0.7);
   if (groupPref === 'large') signals.push(event.groupSize === 'small' ? 0.3 : 1);
   const energyPref = student.aiProfile?.preferredEnergy ?? student.social.energy;
-  if (energyPref !== 'any') signals.push(event.energy === energyPref ? 1 : 0.2);
+  if (energyPref !== 'any') signals.push(event.energy === energyPref ? 1 : 0);
   if (student.social.makeFriends) signals.push(event.categories.includes('social') || event.groupSize !== 'large' ? 1 : 0.5);
   if (student.social.tryNew) signals.push(event.beginnerFriendly ? 1 : 0.4);
   if (signals.length === 0) return NEUTRAL;
