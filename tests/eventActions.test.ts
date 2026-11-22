@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createSeedDatabase } from '../server/store/seed';
+import { createSeedDatabase, withoutSampleEvents } from '../server/store/seed';
 import {
   approveJoinRequest,
   AUTO_HIDE_REPORT_THRESHOLD,
   createStudentEvent,
+  deleteEvent,
   EventValidationError,
   recordSwipe,
   reportEvent,
@@ -107,5 +108,43 @@ describe('moderation', () => {
     expect(event.reports).toHaveLength(1);
     for (const r of reporters.slice(1)) reportEvent(db, event.id, r, 'spam', NOW);
     expect(event.status).toBe('removed');
+  });
+});
+
+describe('hard delete', () => {
+  it('lets only the host delete, and removes the event with its swipes, connections and join requests', () => {
+    const event = createStudentEvent(db, input({ visibility: 'approval' }), NOW);
+    recordSwipe(db, event.id, 'stu-sam', 'interested', NOW);
+    setConnection(db, event.id, 'stu-sam', true, NOW);
+    recordSwipe(db, event.id, 'stu-maya', 'interested', NOW);
+    expect(db.joinRequests.some((r) => r.eventId === event.id)).toBe(true);
+
+    expect(() => deleteEvent(db, event.id, 'stu-sam')).toThrow();
+    expect(db.events).toContain(event);
+
+    expect(deleteEvent(db, event.id, 'stu-jordan').id).toBe(event.id);
+    expect(db.events.some((e) => e.id === event.id)).toBe(false);
+    for (const rows of [db.swipes, db.connections, db.joinRequests]) {
+      expect(rows.some((r) => r.eventId === event.id)).toBe(false);
+    }
+  });
+});
+
+describe('real data only', () => {
+  it('starts with no sample events', () => {
+    const fresh = createSeedDatabase(NOW, { sampleEvents: false });
+    expect(fresh.events).toHaveLength(0);
+    expect(fresh.swipes).toHaveLength(0);
+    expect(fresh.connections).toHaveLength(0);
+    expect(fresh.students.length).toBeGreaterThan(0);
+  });
+
+  it('purges sample events and their records but keeps student events', () => {
+    const event = createStudentEvent(db, input(), NOW);
+    recordSwipe(db, event.id, 'stu-sam', 'interested', NOW);
+    const cleaned = withoutSampleEvents(db);
+    expect(cleaned.events.map((e) => e.id)).toEqual([event.id]);
+    expect(cleaned.swipes.every((s) => s.eventId === event.id)).toBe(true);
+    expect(cleaned.connections).toHaveLength(0);
   });
 });

@@ -22,7 +22,7 @@ export function ProfilePage() {
   if (!student) return <Skeleton className="mx-auto h-80 max-w-2xl" />;
 
   const resetDemo = () => {
-    if (!window.confirm('Reset all demo data? This restores the sample events and clears new events, swipes and profiles.')) return;
+    if (!window.confirm('Reset all data? This permanently deletes every event students created, plus all swipes and profile changes. Owl Life imports are kept.')) return;
     reset.mutate(undefined, {
       onSuccess: () => {
         switchStudent('stu-jordan');

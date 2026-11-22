@@ -23,12 +23,12 @@ OwlMatch is a mobile-first, AI-powered campus discovery app for Kennesaw State U
 | Discover | Swipe deck (touch/mouse drag, ← → keys, and buttons), match score with its source labeled, a personalized reason, filters (campus, category, time, type), search, empty states |
 | AI | Gemini profile extraction, Gemini re-ranking of a deterministic shortlist, concierge intent parsing and grounded replies, a labeled rule-based fallback for every step, and swipe feedback learning |
 | Why AI? | Side-by-side view of the same events ranked by category-only matching and by the full pipeline |
-| Events | Student event creation with image upload, validation, and visibility (public, approval required, invite link). The location stays hidden until the host approves. Students can report and remove events |
+| Events | Student event creation with image upload, validation, and visibility (public, approval required, invite link). The location stays hidden until the host approves. Students can report events, and hosts can permanently delete their own (the event, its RSVPs and join requests, and its uploaded image) |
 | Social | Interest counts come from real swipes. "Find people to go with" uses mutual opt-in, shares first name and major only, and has a global privacy switch |
 | Calendar | A prefilled Google Calendar link with correct UTC times and `ctz=America/New_York` |
 | My Matches | Interested, hosting (with join-request approvals) and past events |
 | Owl Life import | Real KSU activities from a PDF export of Owl Life: `npm run import:owl-life -- <pdf>`. Each import is labeled "Owl Life listing", RSVP counts are shown as a dated snapshot, past listings are hidden, and a new export replaces the old one ([details](docs/OWL_LIFE_IMPORT.md)) |
-| Demo mode | A clearly labeled demo-student switcher (`?as=<id>` per tab) and a one-click demo data reset |
+| Demo mode | A clearly labeled demo-student switcher (`?as=<id>` per tab) and a one-click data reset that clears student-created events, swipes and profile changes (Owl Life imports are kept) |
 
 ## Stack
 
@@ -56,7 +56,7 @@ Open the printed web URL. The default demo student is **Jordan**. Use the avatar
 | `npm test` | Vitest unit/component tests |
 | `npm run test:e2e` | Playwright demo-story test (isolated port and data directory) |
 | `npm run import:owl-life -- <pdf>` | Import an Owl Life PDF export (`--dry-run` to preview) |
-| `npm run demo:reset` | Restore the seeded demo data (dates are relative to today) |
+| `npm run demo:reset` | Reset to the starting data: demo students and the latest Owl Life import, with no student events |
 
 ### Environment variables
 
@@ -67,6 +67,7 @@ Open the printed web URL. The default demo student is **Jordan**. Use the avatar
 | `GEMINI_TIMEOUT_MS` | no | `25000` | Per-call timeout before falling back |
 | `PORT` | no | `8787` | API port; the Vite dev proxy follows it |
 | `OWLMATCH_DATA_DIR` | no | `server/data` | Where `db.json` and uploads live |
+| `OWLMATCH_SAMPLE_EVENTS` | no | off | `1` loads the invented sample events (used by the e2e test fixture). When off, any sample events left in `db.json` are purged on startup |
 
 ## Project layout
 
@@ -76,7 +77,7 @@ server/     Express API
   ai/       Gemini client, prompts, profile understanding, recommendation pipeline, concierge, heuristics
   routes/   HTTP endpoints (students, events, system)
   services/ Event mutations and privacy-aware event views
-  store/    JSON store + seed data
+  store/    JSON store + seed data (demo students; sample events for test fixtures)
 src/        React client
   app/      Routing and error boundary
   components/ui, components/layout
@@ -99,7 +100,7 @@ tests/      Vitest      e2e/   Playwright      docs/   Architecture, AI, data mo
 
 - **Real:** Gemini calls (when a key is set), validation of model output, rule-based fallback ranking, swipe persistence and learning, student-created events, image upload, interest counts, mutual opt-in, and Google Calendar links.
 - **Real, as a snapshot:** activities imported from an Owl Life PDF export. Their title, dates, location, organizers and RSVP counts are as of the export time, and the app never presents them as live.
-- **Simulated / sample:** All seeded events are **sample data** with invented schedules, labeled "Sample event" in the UI. Demo students stand in for KSU sign-in, and nothing is verified. Organization affiliation on student events is shown as a claim ("simulated verification"). There is no live KSU calendar, Owl Life or Handshake integration. Owl Life data comes only from PDF exports (see Decisions).
+- **Simulated / sample:** The app ships with **no sample events**. The invented sample dataset (labeled "Sample event" in the UI) is loaded only for tests and the e2e fixture (`OWLMATCH_SAMPLE_EVENTS=1`). Demo students stand in for KSU sign-in, and nothing is verified. Organization affiliation on student events is shown as a claim ("simulated verification"). There is no live KSU calendar, Owl Life or Handshake integration. Owl Life data comes only from PDF exports (see Decisions).
 
 ## License
 

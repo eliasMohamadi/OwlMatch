@@ -25,7 +25,7 @@ export default defineConfig({
     {
       command: 'npx tsx server/index.ts',
       // Default: AI disabled for fast, deterministic runs. E2E_USE_GEMINI=1 lets the server read the key from .env.
-      env: { PORT: String(API_PORT), OWLMATCH_DATA_DIR: '.e2e-data', ...(LIVE_AI ? {} : { GEMINI_API_KEY: '' }) },
+      env: { PORT: String(API_PORT), OWLMATCH_DATA_DIR: '.e2e-data', OWLMATCH_SAMPLE_EVENTS: '1', ...(LIVE_AI ? {} : { GEMINI_API_KEY: '' }) },
       port: API_PORT,
       reuseExistingServer: false,
     },

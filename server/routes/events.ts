@@ -1,3 +1,5 @@
+import { rmSync } from 'node:fs';
+import path from 'node:path';
 import { Router } from 'express';
 import { z } from 'zod';
 import { INTERESTS } from '../../shared/interests';
@@ -7,14 +9,15 @@ import { parseBody, requireEvent, requireStudent, route } from '../http';
 import {
   approveJoinRequest,
   createStudentEvent,
+  deleteEvent,
   recordSwipe,
-  removeEvent,
   removeSwipe,
   reportEvent,
   setConnection,
 } from '../services/eventActions';
 import { goingTogetherIds, interestedStudentIds, toEventView } from '../services/eventViews';
 import { mutate, read } from '../store/db';
+import { UPLOAD_DIR } from './system';
 
 export const eventsRouter = Router();
 
@@ -39,11 +42,23 @@ eventsRouter.post(
 
 const hostSchema = z.object({ hostId: z.string() });
 
+/** Student cover uploads are `/uploads/<uuid>.<ext>`; anything else (e.g. Owl Life images) is left alone. */
+const STUDENT_UPLOAD = /^\/uploads\/([0-9a-f-]+\.(?:jpg|png|webp))$/;
+
+function deleteCoverImage(url: string | null): void {
+  const fileName = url?.match(STUDENT_UPLOAD)?.[1];
+  if (!fileName) return;
+  if (read().events.some((e) => e.coverImageUrl === url)) return;
+  rmSync(path.join(UPLOAD_DIR(), fileName), { force: true });
+}
+
+/** Host-only hard delete: the event, its related records and its uploaded cover image. */
 eventsRouter.delete(
   '/:id',
   route((req) => {
     const { hostId } = parseBody(hostSchema, req.body);
-    mutate((db) => removeEvent(db, req.params.id, hostId));
+    const deleted = mutate((db) => deleteEvent(db, req.params.id, hostId));
+    deleteCoverImage(deleted.coverImageUrl);
     return { ok: true };
   }),
 );

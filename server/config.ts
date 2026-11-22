@@ -24,6 +24,8 @@ export const config = {
   port: Number(process.env.PORT ?? DEFAULT_PORT),
   isProduction: process.env.NODE_ENV === 'production',
   dataDir: process.env.OWLMATCH_DATA_DIR ?? path.join(ROOT, 'server', 'data'),
+  /** Off by default: real data only. The e2e and screenshot fixtures set OWLMATCH_SAMPLE_EVENTS=1. */
+  sampleEvents: process.env.OWLMATCH_SAMPLE_EVENTS === '1',
   gemini: {
     apiKey: process.env.GEMINI_API_KEY ?? '',
     model: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash',

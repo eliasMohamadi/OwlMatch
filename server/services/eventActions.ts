@@ -98,10 +98,19 @@ export function approveJoinRequest(db: Database, eventId: string, studentId: str
   request.status = 'approved';
 }
 
-export function removeEvent(db: Database, eventId: string, hostId: string): void {
+/**
+ * Permanently deletes an event along with every swipe, connection and join
+ * request that points at it. Returns the deleted event so the caller can clean
+ * up its uploaded cover image.
+ */
+export function deleteEvent(db: Database, eventId: string, hostId: string): CampusEvent {
   const event = requireEvent(db, eventId);
-  if (event.organizer.studentId !== hostId) throw new HttpError(403, 'Only the host can remove this event');
-  event.status = 'removed';
+  if (event.organizer.studentId !== hostId) throw new HttpError(403, 'Only the host can delete this event');
+  db.events = db.events.filter((e) => e.id !== eventId);
+  db.swipes = db.swipes.filter((s) => s.eventId !== eventId);
+  db.connections = db.connections.filter((c) => c.eventId !== eventId);
+  db.joinRequests = db.joinRequests.filter((r) => r.eventId !== eventId);
+  return event;
 }
 
 /** Reports are stored for moderators; three distinct reports auto-hide an event pending review. */

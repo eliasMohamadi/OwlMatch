@@ -241,15 +241,35 @@ const SEED_INTEREST: [studentId: string, eventId: string, optIn: boolean][] = [
   ['stu-alex', 'evt-robotics-build', false],
 ];
 
-export function createSeedDatabase(now: Date): Database {
+/**
+ * Builds a fresh database. The app starts with no sample events
+ * (`sampleEvents: false`); tests and the e2e/screenshot fixtures opt in to the
+ * sample dataset, which is the default here so fixtures stay one call.
+ */
+export function createSeedDatabase(now: Date, { sampleEvents = true }: { sampleEvents?: boolean } = {}): Database {
   const at = now.toISOString();
+  const interest = sampleEvents ? SEED_INTEREST : [];
   return {
     version: 1,
     seededAt: at,
     students: buildStudents(),
-    events: SAMPLE_EVENTS.map((sample) => buildEvent(sample, now)),
-    swipes: SEED_INTEREST.map(([studentId, eventId]) => ({ studentId, eventId, decision: 'interested', at })),
-    connections: SEED_INTEREST.filter(([, , optIn]) => optIn).map(([studentId, eventId]) => ({ studentId, eventId, at })),
+    events: sampleEvents ? SAMPLE_EVENTS.map((sample) => buildEvent(sample, now)) : [],
+    swipes: interest.map(([studentId, eventId]) => ({ studentId, eventId, decision: 'interested', at })),
+    connections: interest.filter(([, , optIn]) => optIn).map(([studentId, eventId]) => ({ studentId, eventId, at })),
     joinRequests: [],
+  };
+}
+
+/** Drops sample events and every swipe, connection and join request that points at them. */
+export function withoutSampleEvents(db: Database): Database {
+  const sampleIds = new Set(db.events.filter((e) => e.source.type === 'sample').map((e) => e.id));
+  if (sampleIds.size === 0) return db;
+  const keep = <T extends { eventId: string }>(rows: T[]) => rows.filter((r) => !sampleIds.has(r.eventId));
+  return {
+    ...db,
+    events: db.events.filter((e) => !sampleIds.has(e.id)),
+    swipes: keep(db.swipes),
+    connections: keep(db.connections),
+    joinRequests: keep(db.joinRequests),
   };
 }

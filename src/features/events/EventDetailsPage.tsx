@@ -192,10 +192,10 @@ function ModerationActions({ event }: { event: EventView }) {
   const queryClient = useQueryClient();
 
   const remove = async () => {
-    if (!window.confirm('Remove this event for everyone?')) return;
+    if (!window.confirm("Delete this event permanently? Everyone's RSVPs and join requests for it are deleted too. This can't be undone.")) return;
     await api.removeEvent(event.id, studentId);
     void queryClient.invalidateQueries();
-    toast('Event removed', 'info');
+    toast('Event deleted', 'info');
     navigate('/matches');
   };
 
@@ -209,7 +209,7 @@ function ModerationActions({ event }: { event: EventView }) {
     <div className="mt-5 flex justify-center gap-2">
       {event.viewer.isHost ? (
         <Button variant="danger" size="sm" icon={<Trash2 size={16} />} onClick={() => void remove()}>
-          Remove event
+          Delete event
         </Button>
       ) : (
         <Button variant="ghost" size="sm" icon={<Flag size={16} />} onClick={() => setReportOpen(true)}>

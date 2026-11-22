@@ -4,7 +4,7 @@ import { databaseSchema } from '../../shared/schemas';
 import type { Database } from '../../shared/types';
 import { config } from '../config';
 import { applyOwlLifeImport, owlLifeImportVersion, readOwlLifeImport } from '../ingest/owlLife/importStore';
-import { createSeedDatabase } from './seed';
+import { createSeedDatabase, withoutSampleEvents } from './seed';
 
 /**
  * Persistent JSON-file store. It keeps the whole (small) dataset in memory and
@@ -34,17 +34,21 @@ function withImports(db: Database): Database {
   return applyOwlLifeImport(db, readOwlLifeImport());
 }
 
+/** Sample events are purged from existing data unless the sample fixture is switched on. */
+const realDataOnly = (db: Database): Database => (config.sampleEvents ? db : withoutSampleEvents(db));
+const freshDatabase = (now: Date) => createSeedDatabase(now, { sampleEvents: config.sampleEvents });
+
 function load(): Database {
   if (existsSync(dbFile())) {
     const parsed = databaseSchema.safeParse(JSON.parse(readFileSync(dbFile(), 'utf8')));
     if (parsed.success) {
-      const db = withImports(parsed.data);
+      const db = withImports(realDataOnly(parsed.data));
       persist(db);
       return db;
     }
-    console.warn('[store] db.json failed validation; reseeding demo data');
+    console.warn('[store] db.json failed validation; starting a fresh database');
   }
-  const seeded = withImports(createSeedDatabase(new Date()));
+  const seeded = withImports(freshDatabase(new Date()));
   persist(seeded);
   return seeded;
 }
@@ -68,9 +72,12 @@ export function mutate<T>(change: (db: Database) => T): T {
   return result;
 }
 
-/** Restores the demo students and sample events, keeping the latest imported listings. */
+/**
+ * Restores the starting dataset (demo students, plus sample events only when
+ * OWLMATCH_SAMPLE_EVENTS=1), keeping the latest imported listings.
+ */
 export function resetToSeed(now = new Date()): Database {
-  const seeded = withImports(createSeedDatabase(now));
+  const seeded = withImports(freshDatabase(now));
   persist(seeded);
   cache = seeded;
   return seeded;
