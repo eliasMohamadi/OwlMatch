@@ -65,11 +65,26 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setActingAsState(id);
   }, []);
 
+  /**
+   * Ends the session and shows the sign-in page. Order matters: set the
+   * signed-out state first so the app re-renders into the sign-in page, then
+   * drop everything else that was cached for the old session. (Clearing the
+   * whole cache first detached the screen from the sign-in state, so the old
+   * page stayed up after signing out.)
+   */
   const signOut = useCallback(async () => {
     await api.signOut().catch(() => undefined);
     setActingAs(null);
-    queryClient.clear();
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Storage unavailable: nothing to forget.
+    }
+    // Start the next sign-in from the app's front door, not the page we left.
+    window.history.replaceState(null, '', '/');
     queryClient.setQueryData<AuthState>(AUTH_QUERY_KEY, { signedIn: false });
+    queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== AUTH_QUERY_KEY[0] });
   }, [queryClient]);
 
   const data = auth.data;

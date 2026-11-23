@@ -188,6 +188,25 @@ test.describe('admin acting as demo students', () => {
     await expect(page.getByRole('dialog').getByText(/interested on OwlMatch/)).toBeVisible();
   });
 
+  for (const from of ['settings page', 'account menu'] as const) {
+    test(`signing out from the ${from} returns to the sign-in page`, async ({ page }) => {
+      await as(page, 'stu-jordan', '/settings');
+      await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+      if (from === 'settings page') {
+        await page.getByRole('button', { name: 'Sign out' }).click();
+      } else {
+        await page.getByRole('button', { name: /Switch student/ }).first().click();
+        await page.getByRole('dialog').getByRole('button', { name: 'Sign out' }).click();
+      }
+      await expect(page.getByRole('heading', { name: 'Sign in to OwlMatch' })).toBeVisible();
+      // Really signed out: the session cookie is gone, so a reload and the API agree.
+      await page.reload();
+      await expect(page.getByRole('heading', { name: 'Sign in to OwlMatch' })).toBeVisible();
+      expect((await page.request.get('/api/auth/me')).ok()).toBe(true);
+      expect(await (await page.request.get('/api/auth/me')).json()).toEqual({ signedIn: false });
+    });
+  }
+
   test('event form rejects invalid input', async ({ page }) => {
     await as(page, 'stu-jordan', '/create');
     await page.getByRole('button', { name: 'Publish event' }).click();
