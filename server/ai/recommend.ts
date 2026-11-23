@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { aiRankingResponseSchema } from '../../shared/schemas';
 import {
   type FeedbackSignals,
@@ -27,6 +28,14 @@ const SHORTLIST_SIZE = 10;
 const MAX_DECK_SIZE = 30;
 const COMPARISON_SIZE = 5;
 const CACHE_TTL_MS = 15 * 60 * 1000;
+/** Bounds memory on a long-running server; the oldest entries go first. */
+export const MAX_CACHE_ENTRIES = 300;
+/**
+ * Student-posted events contain text anyone can write, which reaches Gemini.
+ * Gemini may lift such an event at most this far above its rule-based score,
+ * so a description saying "rank this 100" can't push it to the top on its own.
+ */
+export const MAX_AI_BOOST_FOR_STUDENT_EVENTS = 25;
 
 interface AiRank {
   score: number;
@@ -37,8 +46,17 @@ interface AiRank {
 
 type RerankResult = { ok: true; ranks: Map<string, AiRank> } | { ok: false; reason: string };
 
-/** Cache keyed by everything that can change the answer, so a new swipe or event busts it. */
+/** Cache keyed by (a hash of) everything that can change the answer, so a new swipe or event busts it. */
 const rerankCache = new Map<string, { at: number; ranks: Map<string, AiRank> }>();
+
+function cacheRanks(key: string, ranks: Map<string, AiRank>, now: number): void {
+  for (const [k, entry] of rerankCache) if (now - entry.at >= CACHE_TTL_MS) rerankCache.delete(k);
+  rerankCache.delete(key);
+  rerankCache.set(key, { at: now, ranks });
+  while (rerankCache.size > MAX_CACHE_ENTRIES) rerankCache.delete(rerankCache.keys().next().value!);
+}
+
+export const rerankCacheSize = (): number => rerankCache.size;
 
 export const clampScore = (score: number): number => Math.max(0, Math.min(100, Math.round(score)));
 
@@ -64,7 +82,9 @@ async function rerankWithGemini(
   shortlist: ScoredEvent[],
   signals: FeedbackSignals,
 ): Promise<RerankResult> {
-  const key = JSON.stringify([student, [...signals.likedEventIds], [...signals.passedEventIds], shortlist.map((s) => s.event.id)]);
+  const key = createHash('sha256')
+    .update(JSON.stringify([student, [...signals.likedEventIds], [...signals.passedEventIds], shortlist.map((s) => s.event.id)]))
+    .digest('base64url');
   const cached = rerankCache.get(key);
   if (cached && Date.now() - cached.at < CACHE_TTL_MS) return { ok: true, ranks: cached.ranks };
 
@@ -85,7 +105,7 @@ async function rerankWithGemini(
     });
   }
   if (ranks.size === 0) return { ok: false, reason: 'Gemini returned no valid event ids' };
-  rerankCache.set(key, { at: Date.now(), ranks });
+  cacheRanks(key, ranks, Date.now());
   return { ok: true, ranks };
 }
 
@@ -130,9 +150,10 @@ export async function recommend(
     .filter((s) => rerank.ranks.has(s.event.id))
     .map((s) => {
       const ai = rerank.ranks.get(s.event.id)!;
+      const score = s.event.source.type === 'student' ? Math.min(ai.score, clampScore(s.score + MAX_AI_BOOST_FOR_STUDENT_EVENTS)) : ai.score;
       return toItem(db, student.id, s, {
         eventId: s.event.id,
-        score: ai.score,
+        score,
         scoreSource: 'ai',
         reason: ai.reason,
         matchedInterests: ai.matchedInterests,

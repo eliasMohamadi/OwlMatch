@@ -22,7 +22,7 @@ The newest import **replaces** the previous one. A running server applies it on 
 | Import report | `server/data/imports/owl_life_pdf.report.json` |
 | Cover images | `server/data/uploads/owl-life/<content-hash>.jpg`, served at `/uploads/owl-life/…` |
 
-**Demo reset** (Profile → Reset demo data) restores the demo students and sample events and **keeps** the latest import.
+**Data reset** (admin only: Profile → Reset demo data) restores the demo students (and sample events when `OWLMATCH_SAMPLE_EVENTS=1`) and **keeps** the latest import.
 
 ## Pipeline
 

@@ -2,7 +2,7 @@ import { Loader2 } from 'lucide-react';
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { cn } from '../../lib/cn';
 
-type Variant = 'primary' | 'dark' | 'outline' | 'ghost' | 'danger';
+type Variant = 'primary' | 'dark' | 'outline' | 'ghost' | 'danger' | 'google';
 type Size = 'sm' | 'md' | 'lg';
 
 const VARIANTS: Record<Variant, string> = {
@@ -11,6 +11,8 @@ const VARIANTS: Record<Variant, string> = {
   outline: 'border border-line bg-white text-ink hover:border-ink/30 hover:bg-surface',
   ghost: 'text-ink hover:bg-surface',
   danger: 'border border-orange-200 bg-white text-danger hover:bg-orange-50',
+  /** Google Calendar links only: Google's blue with white text and icon. */
+  google: 'bg-gcal text-white hover:bg-gcal-deep',
 };
 
 const SIZES: Record<Size, string> = {

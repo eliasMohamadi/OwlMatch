@@ -1,12 +1,14 @@
 /**
  * Records the ~90-second demo video by driving the real app (no mock-ups).
- * Needs the app running (`npm run dev`). Output: docs/demo-video/owlmatch-demo.webm
+ * Needs the app running with sample events (`npm run dev:demo`) and ADMIN_PASSWORD in .env.
+ * Output: docs/demo-video/owlmatch-demo.webm
  *   BASE=http://localhost:5173 node scripts/record-demo.mjs
  *   ffmpeg -i docs/demo-video/owlmatch-demo.webm -c:v libx264 -pix_fmt yuv420p docs/demo-video/owlmatch-demo.mp4
  */
 import { mkdirSync, readdirSync, renameSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { chromium } from '@playwright/test';
+import { prepareDemo } from './demo-session.mjs';
 
 const BASE = process.env.BASE ?? 'http://localhost:5173';
 const OUT_DIR = path.resolve('docs/demo-video');
@@ -50,7 +52,7 @@ async function card(title, subtitle) {
 
 const typeSlowly = (locator, text) => locator.pressSequentially(text, { delay: 18 });
 
-await page.request.post(`${BASE}/api/demo/reset`);
+await prepareDemo(page, BASE);
 
 // 0:00 — Problem
 await card('Campus life is<br/><span style="color:#FFC629">scattered.</span>', 'Hundreds of things to do at KSU, spread across calendars, apps and group chats. And showing up alone is hard.');

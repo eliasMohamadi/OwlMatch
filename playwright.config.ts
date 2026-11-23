@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { E2E_ADMIN_PASSWORD } from './e2e/constants';
 
 /**
  * E2E runs against an isolated API (its own port + data directory) so it never
@@ -7,6 +8,7 @@ import { defineConfig, devices } from '@playwright/test';
 const API_PORT = 8790;
 const WEB_PORT = 5190;
 const LIVE_AI = Boolean(process.env.E2E_USE_GEMINI);
+
 
 export default defineConfig({
   testDir: 'e2e',
@@ -25,7 +27,14 @@ export default defineConfig({
     {
       command: 'npx tsx server/index.ts',
       // Default: AI disabled for fast, deterministic runs. E2E_USE_GEMINI=1 lets the server read the key from .env.
-      env: { PORT: String(API_PORT), OWLMATCH_DATA_DIR: '.e2e-data', OWLMATCH_SAMPLE_EVENTS: '1', ...(LIVE_AI ? {} : { GEMINI_API_KEY: '' }) },
+      env: {
+        PORT: String(API_PORT),
+        OWLMATCH_DATA_DIR: '.e2e-data',
+        OWLMATCH_SAMPLE_EVENTS: '1',
+        ADMIN_PASSWORD: E2E_ADMIN_PASSWORD,
+        APP_BASE_URL: `http://localhost:${WEB_PORT}`,
+        ...(LIVE_AI ? {} : { GEMINI_API_KEY: '' }),
+      },
       port: API_PORT,
       reuseExistingServer: false,
     },

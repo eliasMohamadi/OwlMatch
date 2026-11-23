@@ -31,6 +31,37 @@ export const config = {
     model: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash',
     timeoutMs: Number(process.env.GEMINI_TIMEOUT_MS ?? DEFAULT_GEMINI_TIMEOUT_MS),
   },
+  auth: {
+    /** Public origin the browser uses (the Vite dev server in development). Microsoft redirects back here. */
+    appBaseUrl: (process.env.APP_BASE_URL ?? 'http://localhost:5173').replace(/\/+$/, ''),
+    /** Signs session cookies. Required in production; development falls back to a per-process random secret. */
+    sessionSecret: process.env.SESSION_SECRET ?? '',
+    /** Enables the admin sign-in that can act as demo students. Empty disables it. */
+    adminPassword: process.env.ADMIN_PASSWORD ?? '',
+    /** Only these email domains can sign in with Microsoft (exact match, lowercase). */
+    allowedEmailDomains: (process.env.ALLOWED_EMAIL_DOMAINS ?? 'students.kennesaw.edu,kennesaw.edu')
+      .split(',')
+      .map((d) => d.trim().toLowerCase().replace(/^@/, ''))
+      .filter(Boolean),
+    entra: {
+      /** The university's Entra tenant id (a GUID). Pinning it stops other tenants from claiming a KSU email. */
+      tenantId: (process.env.ENTRA_TENANT_ID ?? '').trim().toLowerCase(),
+      clientId: (process.env.ENTRA_CLIENT_ID ?? '').trim(),
+      clientSecret: process.env.ENTRA_CLIENT_SECRET ?? '',
+    },
+  },
+  /** The data reset is admin-only; in production it also needs this explicit opt-in. */
+  allowReset: process.env.OWLMATCH_ALLOW_RESET === '1',
 } as const;
 
 export const isAiConfigured = (): boolean => config.gemini.apiKey.length > 0;
+
+const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+/** Microsoft sign-in needs an app registration and a specific tenant GUID (not "common" or "organizations"). */
+export const isMicrosoftConfigured = (): boolean => {
+  const { tenantId, clientId, clientSecret } = config.auth.entra;
+  return GUID.test(tenantId) && clientId.length > 0 && clientSecret.length > 0;
+};
+
+export const isAdminConfigured = (): boolean => config.auth.adminPassword.length > 0;

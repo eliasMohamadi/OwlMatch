@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { DiscoverFilters, NewEventInput, OnboardingInput, SwipeDecision } from '@shared/types';
-import { api } from './api';
+import { api, type StudentSettings } from './api';
 import { useSession } from './session';
 
 /** Query keys in one place so invalidation stays consistent. */
@@ -19,7 +19,7 @@ export const keys = {
 const AI_QUERY_OPTIONS = { staleTime: Infinity, refetchOnWindowFocus: false, retry: false } as const;
 
 export const useHealth = () => useQuery({ queryKey: keys.health, queryFn: api.health, staleTime: 60_000 });
-export const useStudents = () => useQuery({ queryKey: keys.students, queryFn: api.students });
+export const useStudents = (enabled = true) => useQuery({ queryKey: keys.students, queryFn: api.students, enabled });
 
 export function useCurrentStudent() {
   const { studentId } = useSession();
@@ -43,12 +43,12 @@ export function useMatches() {
 
 export function useEvent(eventId: string) {
   const { studentId } = useSession();
-  return useQuery({ queryKey: keys.event(eventId, studentId), queryFn: () => api.event(eventId, studentId) });
+  return useQuery({ queryKey: keys.event(eventId, studentId), queryFn: () => api.event(eventId) });
 }
 
 export function usePeople(eventId: string, enabled = true) {
   const { studentId } = useSession();
-  return useQuery({ queryKey: keys.people(eventId, studentId), queryFn: () => api.people(eventId, studentId), enabled });
+  return useQuery({ queryKey: keys.people(eventId, studentId), queryFn: () => api.people(eventId), enabled });
 }
 
 /** Invalidates everything that depends on a single event's social state. */
@@ -64,28 +64,25 @@ function useEventInvalidation() {
 }
 
 export function useSwipe() {
-  const { studentId } = useSession();
   const invalidate = useEventInvalidation();
   return useMutation({
-    mutationFn: ({ eventId, decision }: { eventId: string; decision: SwipeDecision }) => api.swipe(eventId, studentId, decision),
+    mutationFn: ({ eventId, decision }: { eventId: string; decision: SwipeDecision }) => api.swipe(eventId, decision),
     onSuccess: (_event, { eventId }) => invalidate(eventId),
   });
 }
 
 export function useUnswipe() {
-  const { studentId } = useSession();
   const invalidate = useEventInvalidation();
   return useMutation({
-    mutationFn: (eventId: string) => api.unswipe(eventId, studentId),
+    mutationFn: (eventId: string) => api.unswipe(eventId),
     onSuccess: (_event, eventId) => invalidate(eventId),
   });
 }
 
 export function useConnect() {
-  const { studentId } = useSession();
   const invalidate = useEventInvalidation();
   return useMutation({
-    mutationFn: ({ eventId, optIn }: { eventId: string; optIn: boolean }) => api.connect(eventId, studentId, optIn),
+    mutationFn: ({ eventId, optIn }: { eventId: string; optIn: boolean }) => api.connect(eventId, optIn),
     onSuccess: (_event, { eventId }) => invalidate(eventId),
   });
 }
@@ -108,7 +105,7 @@ export function useUpdateSettings() {
   const { studentId } = useSession();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (settings: { socialVisible: boolean }) => api.updateSettings(studentId, settings),
+    mutationFn: (settings: StudentSettings) => api.updateSettings(studentId, settings),
     onSuccess: (student) => queryClient.setQueryData(keys.student(studentId), student),
   });
 }
@@ -118,7 +115,7 @@ export function useCreateEvent() {
   const queryClient = useQueryClient();
   const { studentId } = useSession();
   return useMutation({
-    mutationFn: (input: NewEventInput) => api.createEvent(input),
+    mutationFn: (input: Omit<NewEventInput, 'organizerId'>) => api.createEvent(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['recommendations'] });
       void queryClient.invalidateQueries({ queryKey: keys.matches(studentId) });

@@ -28,7 +28,8 @@ OwlMatch is a mobile-first, AI-powered campus discovery app for Kennesaw State U
 | Calendar | A prefilled Google Calendar link with correct UTC times and `ctz=America/New_York` |
 | My Matches | Interested, hosting (with join-request approvals) and past events |
 | Owl Life import | Real KSU activities from a PDF export of Owl Life: `npm run import:owl-life -- <pdf>`. Each import is labeled "Owl Life listing", RSVP counts are shown as a dated snapshot, past listings are hidden, and a new export replaces the old one ([details](docs/OWL_LIFE_IMPORT.md)) |
-| Demo mode | A clearly labeled demo-student switcher (`?as=<id>` per tab) and a one-click data reset that clears student-created events, swipes and profile changes (Owl Life imports are kept) |
+| Sign-in | *Sign in with Microsoft* with a KSU account. Microsoft runs the Authenticator approval under the university's MFA policy; the server verifies the ID token, pins the university tenant and allows only KSU email domains ([details](docs/AUTH.md)) |
+| Admin & demo mode | A password-protected admin sign-in that acts as demo students (`?as=<id>` per tab, never real students), and an admin-only data reset that clears student-created events and swipes (Owl Life imports and real accounts are kept) |
 
 ## Stack
 
@@ -42,21 +43,22 @@ OwlMatch is a mobile-first, AI-powered campus discovery app for Kennesaw State U
 
 ```bash
 npm install
-cp .env.example .env        # then set GEMINI_API_KEY (optional — fallback works without it)
+cp .env.example .env        # set ADMIN_PASSWORD to test with demo students; GEMINI_API_KEY is optional
 npm run dev                 # API on :8787, web on :5173 (Vite picks the next free port if taken)
 ```
 
-Open the printed web URL. The default demo student is **Jordan**. Use the avatar menu to switch students, or open a second tab with `?as=stu-maya`.
+Open the printed web URL and sign in. To test with demo students, expand **Admin sign-in** and enter `ADMIN_PASSWORD`. The default demo student is **Jordan**. Use the avatar menu to switch, or open a second tab with `?as=stu-maya`. Students sign in with Microsoft once an Entra app registration is set up ([docs/AUTH.md](docs/AUTH.md)). Use `npm run dev:demo` to also load the invented sample events.
 
 | Command | Purpose |
 |---|---|
 | `npm run dev` | API + web with hot reload |
+| `npm run dev:demo` | Same, with the invented sample events loaded (for demos, screenshots and the demo video) |
 | `npm run build` | Typecheck + production build |
 | `npm start` | Serve the built app and API from one Node process (`NODE_ENV=production`) |
 | `npm test` | Vitest unit/component tests |
 | `npm run test:e2e` | Playwright demo-story test (isolated port and data directory) |
 | `npm run import:owl-life -- <pdf>` | Import an Owl Life PDF export (`--dry-run` to preview) |
-| `npm run demo:reset` | Reset to the starting data: demo students and the latest Owl Life import, with no student events |
+| `npm run demo:reset` | Reset to the starting data: demo students, the latest Owl Life import and real student accounts, with no student events or swipes |
 
 ### Environment variables
 
@@ -67,7 +69,13 @@ Open the printed web URL. The default demo student is **Jordan**. Use the avatar
 | `GEMINI_TIMEOUT_MS` | no | `25000` | Per-call timeout before falling back |
 | `PORT` | no | `8787` | API port; the Vite dev proxy follows it |
 | `OWLMATCH_DATA_DIR` | no | `server/data` | Where `db.json` and uploads live |
-| `OWLMATCH_SAMPLE_EVENTS` | no | off | `1` loads the invented sample events (used by the e2e test fixture). When off, any sample events left in `db.json` are purged on startup |
+| `OWLMATCH_SAMPLE_EVENTS` | no | off | `1` loads the invented sample events (`npm run dev:demo` and the e2e test). When off, any sample events left in `db.json` are purged on startup |
+| `APP_BASE_URL` | for Microsoft sign-in | `http://localhost:5173` | The URL students open; Microsoft redirects to `<APP_BASE_URL>/api/auth/microsoft/callback` |
+| `SESSION_SECRET` | in production | random per process (dev) | Signs session cookies; 32+ characters |
+| `ENTRA_TENANT_ID` / `ENTRA_CLIENT_ID` / `ENTRA_CLIENT_SECRET` | for Microsoft sign-in | — | The university tenant GUID and the app registration ([setup](docs/AUTH.md)) |
+| `ALLOWED_EMAIL_DOMAINS` | no | `students.kennesaw.edu,kennesaw.edu` | Comma-separated, exact match |
+| `ADMIN_PASSWORD` | no | — | Enables admin sign-in to test as demo students (12+ characters in production) |
+| `OWLMATCH_ALLOW_RESET` | no | off | Production only: `1` allows the admin data reset |
 
 ## Project layout
 
@@ -75,7 +83,8 @@ Open the printed web URL. The default demo student is **Jordan**. Use the avatar
 shared/     Domain: schemas & types, interest catalog, ranking engine, time zone, calendar, validation
 server/     Express API
   ai/       Gemini client, prompts, profile understanding, recommendation pipeline, concierge, heuristics
-  routes/   HTTP endpoints (students, events, system)
+  auth/     Microsoft (Entra) sign-in, session cookies, acting-student resolution
+  routes/   HTTP endpoints (auth, students, events, system)
   services/ Event mutations and privacy-aware event views
   store/    JSON store + seed data (demo students; sample events for test fixtures)
 src/        React client
@@ -89,6 +98,7 @@ tests/      Vitest      e2e/   Playwright      docs/   Architecture, AI, data mo
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
+- [Sign-in](docs/AUTH.md): Microsoft school accounts, admin testing, sessions
 - [AI system](docs/AI_SYSTEM.md): how matching works, the fallback, and evidence that the AI adds value
 - [Data model](docs/DATA_MODEL.md)
 - [Decisions & trade-offs](docs/DECISIONS.md)
@@ -100,7 +110,7 @@ tests/      Vitest      e2e/   Playwright      docs/   Architecture, AI, data mo
 
 - **Real:** Gemini calls (when a key is set), validation of model output, rule-based fallback ranking, swipe persistence and learning, student-created events, image upload, interest counts, mutual opt-in, and Google Calendar links.
 - **Real, as a snapshot:** activities imported from an Owl Life PDF export. Their title, dates, location, organizers and RSVP counts are as of the export time, and the app never presents them as live.
-- **Simulated / sample:** The app ships with **no sample events**. The invented sample dataset (labeled "Sample event" in the UI) is loaded only for tests and the e2e fixture (`OWLMATCH_SAMPLE_EVENTS=1`). Demo students stand in for KSU sign-in, and nothing is verified. Organization affiliation on student events is shown as a claim ("simulated verification"). There is no live KSU calendar, Owl Life or Handshake integration. Owl Life data comes only from PDF exports (see Decisions).
+- **Simulated / sample:** The app ships with **no sample events**. The invented sample dataset (labeled "Sample event" in the UI) is loaded only for tests and the e2e fixture (`OWLMATCH_SAMPLE_EVENTS=1`). Students sign in with their KSU Microsoft account; demo students exist only behind the admin sign-in. Organization affiliation on student events is shown as a claim ("simulated verification"). There is no live KSU calendar, Owl Life or Handshake integration. Owl Life data comes only from PDF exports (see Decisions).
 
 ## License
 

@@ -18,7 +18,7 @@
 
 ## Honest disclosures for judges
 - All seeded events are labeled sample data. There is no live KSU, Owl Life or Handshake feed.
-- Demo accounts replace KSU sign-in, and nothing is verified. Organization affiliation is a labeled claim.
+- Students sign in with their KSU Microsoft account (needs an Entra app registration, see docs/AUTH.md); demo accounts are reachable only through the admin sign-in. Organization affiliation is a labeled claim.
 - Without a Gemini key, or when a call fails or times out, every AI step runs on a labeled rule-based fallback.
 - Gemini output varies between runs. Each live call takes about 5–9 s, and the app shows a loading state meanwhile.
 - No survey data. We make no statistical claims about the problem.

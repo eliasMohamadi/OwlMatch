@@ -38,27 +38,52 @@ function withImports(db: Database): Database {
 const realDataOnly = (db: Database): Database => (config.sampleEvents ? db : withoutSampleEvents(db));
 const freshDatabase = (now: Date) => createSeedDatabase(now, { sampleEvents: config.sampleEvents });
 
+/**
+ * Moves an unreadable db.json aside instead of overwriting it, so a bad edit or
+ * a schema change never silently destroys data. Returns the backup path.
+ */
+function quarantine(reason: string): string {
+  const backup = `${dbFile()}.corrupt-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+  renameSync(dbFile(), backup);
+  console.error(`[store] db.json ${reason}. It was moved to ${backup} and a fresh database was started.`);
+  return backup;
+}
+
 function load(): Database {
   if (existsSync(dbFile())) {
-    const parsed = databaseSchema.safeParse(JSON.parse(readFileSync(dbFile(), 'utf8')));
-    if (parsed.success) {
+    let raw: unknown;
+    try {
+      raw = JSON.parse(readFileSync(dbFile(), 'utf8'));
+    } catch {
+      raw = undefined;
+    }
+    const parsed = raw === undefined ? null : databaseSchema.safeParse(raw);
+    if (parsed?.success) {
       const db = withImports(realDataOnly(parsed.data));
       persist(db);
       return db;
     }
-    console.warn('[store] db.json failed validation; starting a fresh database');
+    quarantine(parsed ? `failed validation (${parsed.error.issues[0]?.path.join('.')}: ${parsed.error.issues[0]?.message})` : 'is not valid JSON');
   }
   const seeded = withImports(freshDatabase(new Date()));
   persist(seeded);
   return seeded;
 }
 
+/** How often `read()` checks whether `npm run import:owl-life` wrote a new import file. */
+const IMPORT_CHECK_INTERVAL_MS = 2000;
+let lastImportCheck = 0;
+
 export function read(): Readonly<Database> {
   cache ??= load();
   // A new import was written by `npm run import:owl-life`; layer it in without a restart.
-  if (owlLifeImportVersion() !== appliedImportVersion) {
-    cache = withImports(cache);
-    persist(cache);
+  const now = Date.now();
+  if (now - lastImportCheck >= IMPORT_CHECK_INTERVAL_MS) {
+    lastImportCheck = now;
+    if (owlLifeImportVersion() !== appliedImportVersion) {
+      cache = withImports(cache);
+      persist(cache);
+    }
   }
   return cache;
 }
@@ -74,10 +99,14 @@ export function mutate<T>(change: (db: Database) => T): T {
 
 /**
  * Restores the starting dataset (demo students, plus sample events only when
- * OWLMATCH_SAMPLE_EVENTS=1), keeping the latest imported listings.
+ * OWLMATCH_SAMPLE_EVENTS=1), keeping the latest imported listings and the
+ * accounts of real students who signed in with Microsoft (so their sessions
+ * stay valid). Their swipes and events are cleared like everyone else's.
  */
 export function resetToSeed(now = new Date()): Database {
-  const seeded = withImports(freshDatabase(now));
+  const realStudents = (cache ?? (existsSync(dbFile()) ? read() : null))?.students.filter((s) => s.account.type === 'microsoft') ?? [];
+  const fresh = freshDatabase(now);
+  const seeded = withImports({ ...fresh, students: [...fresh.students, ...structuredClone(realStudents)] });
   persist(seeded);
   cache = seeded;
   return seeded;

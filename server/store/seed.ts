@@ -197,7 +197,7 @@ const BLANK_SOCIAL = { makeFriends: false, groupSize: 'any', tryNew: false, ener
 
 /** Demo students. Maya starts un-onboarded so the live demo walks through onboarding. */
 function buildStudents(): Student[] {
-  const base = { socialVisible: true, aiProfile: null } as const;
+  const base = { socialVisible: true, showMatchSheet: true, aiProfile: null, account: { type: 'demo' } } as const;
   return [
     {
       ...base, id: 'stu-jordan', name: 'Jordan Reyes', major: 'Computer Science', year: 'Junior', avatarColor: '#FFC629',

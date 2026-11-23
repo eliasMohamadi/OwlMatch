@@ -50,6 +50,24 @@ export const onboardingInputSchema = z.object({
   availability: z.array(availabilitySchema),
 });
 
+/**
+ * How a student signs in. Demo students exist only for testing and can be used
+ * only by a signed-in admin. Microsoft accounts are real students identified by
+ * their university tenant and Entra object id (never by email, which can change).
+ * Records written before accounts existed are demo students.
+ */
+export const studentAccountSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('demo') }),
+  z.object({
+    type: z.literal('microsoft'),
+    tenantId: z.string(),
+    objectId: z.string(),
+    email: z.string(),
+    createdAt: z.string(),
+    lastSignInAt: z.string(),
+  }),
+]);
+
 export const studentSchema = onboardingInputSchema.extend({
   id: z.string(),
   name: z.string(),
@@ -58,8 +76,11 @@ export const studentSchema = onboardingInputSchema.extend({
   avatarColor: z.string(),
   onboarded: z.boolean(),
   socialVisible: z.boolean(),
+  /** Setting: open the "You're interested!" pop-up after each right swipe. Older records default to on. */
+  showMatchSheet: z.boolean().default(true),
   aiProfile: aiProfileSchema.nullable(),
   interests: z.array(interestIdSchema),
+  account: studentAccountSchema.default({ type: 'demo' }),
 });
 
 export const organizerSchema = z.object({

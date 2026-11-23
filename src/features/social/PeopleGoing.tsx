@@ -1,4 +1,5 @@
 import { Lock, UsersRound } from 'lucide-react';
+import { detailLine } from '@shared/text';
 import type { EventView } from '@shared/types';
 import { Avatar, Skeleton, Toggle } from '../../components/ui/primitives';
 import { useToast } from '../../components/ui/Toast';
@@ -78,8 +79,11 @@ export function PeopleGoing({ event }: { event: EventView }) {
                           {person.name} {person.isHost && <span className="ml-1 rounded-full bg-ink px-2 py-0.5 text-[11px] font-bold text-gold">Host</span>}
                         </p>
                         <p className="truncate text-sm text-muted">
-                          {person.major} · {person.year}
-                          {person.sharedInterests.length > 0 && ` · also into ${person.sharedInterests.join(', ').toLowerCase()}`}
+                          {detailLine(
+                            person.major,
+                            person.year,
+                            person.sharedInterests.length > 0 ? `also into ${person.sharedInterests.join(', ').toLowerCase()}` : null,
+                          )}
                         </p>
                       </div>
                     </li>

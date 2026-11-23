@@ -20,6 +20,7 @@
     "dev": "concurrently -k -n api,web -c yellow,cyan \"npm:dev:api\" \"npm:dev:web\"",
     "dev:api": "tsx watch server/index.ts",
     "dev:web": "vite",
+    "dev:demo": "cross-env OWLMATCH_SAMPLE_EVENTS=1 npm run dev",
     "build": "tsc --noEmit -p tsconfig.json && vite build",
     "start": "cross-env NODE_ENV=production tsx server/index.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",

@@ -10,6 +10,18 @@ const SWIPE_VELOCITY = 650;
 const FLY_OUT_DISTANCE = 600;
 const MAX_ROTATION_DEG = 14;
 const VISIBLE_STACK = 3;
+/** A press that moves less than this (px) is a tap that opens details; anything more is a drag. */
+const TAP_SLOP = 8;
+/** Peak opacity of the swipe glow, reached at the commit distance. */
+const GLOW_MAX_OPACITY = 0.38;
+
+/** Faint green glow while swiping right (interested), red while swiping left (pass). */
+function glowFor(offset: number): string {
+  const strength = Math.min(1, Math.abs(offset) / SWIPE_DISTANCE) * GLOW_MAX_OPACITY;
+  if (strength < 0.01) return '0 0 0 0 rgb(0 0 0 / 0)';
+  const color = offset > 0 ? '34 197 94' : '239 68 68';
+  return `0 0 48px 6px rgb(${color} / ${strength.toFixed(3)})`;
+}
 
 interface SwipeDeckProps {
   items: RecommendationItem[];
@@ -26,6 +38,9 @@ export function SwipeDeck({ items, onDecide, onOpen }: SwipeDeckProps) {
   const rotate = useTransform(x, [-300, 300], [-MAX_ROTATION_DEG, MAX_ROTATION_DEG]);
   const likeOpacity = useTransform(x, [20, SWIPE_DISTANCE], [0, 1]);
   const passOpacity = useTransform(x, [-SWIPE_DISTANCE, -20], [1, 0]);
+  const glow = useTransform(x, glowFor);
+  /** Where the current press started, and whether it turned into a drag. Used to tell a tap from a swipe. */
+  const press = useRef<{ x: number; y: number; dragged: boolean } | null>(null);
   const reduceMotion = useReducedMotion();
   const busy = useRef(false);
   const top = items[0];
@@ -55,6 +70,22 @@ export function SwipeDeck({ items, onDecide, onOpen }: SwipeDeckProps) {
     return () => window.removeEventListener('keydown', onKey);
   }, [commit, onOpen, top]);
 
+  /**
+   * Opens details only for a real tap: released close to where it was pressed,
+   * without ever becoming a drag. Motion's onTap also fired when a swipe ended
+   * over the card (the card moves with the finger), which opened details instead
+   * of finishing the swipe. Detecting it on pointer release works the same for
+   * mouse and touch; a touch on a draggable card doesn't reliably produce `click`.
+   */
+  const onCardPointerUp = (event: React.PointerEvent, item: RecommendationItem) => {
+    const start = press.current;
+    press.current = null;
+    if (!start || start.dragged || busy.current) return;
+    if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > TAP_SLOP) return;
+    onOpen(item);
+  };
+
+  /** The swipe is decided when the finger or mouse is released. */
   const onDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.x > SWIPE_DISTANCE || info.velocity.x > SWIPE_VELOCITY) void commit('interested');
     else if (info.offset.x < -SWIPE_DISTANCE || info.velocity.x < -SWIPE_VELOCITY) void commit('passed');
@@ -66,7 +97,7 @@ export function SwipeDeck({ items, onDecide, onOpen }: SwipeDeckProps) {
 
   return (
     <div className="mx-auto w-full max-w-[26rem]">
-      <div className="relative h-[clamp(25rem,calc(100dvh-24.5rem),34rem)]" aria-live="polite">
+      <div className="relative h-[clamp(29.25rem,calc(100dvh-20.25rem),38.25rem)]" aria-live="polite">
         {stack
           .map((item, index) => {
             const isTop = index === 0;
@@ -85,14 +116,17 @@ export function SwipeDeck({ items, onDecide, onOpen }: SwipeDeckProps) {
             return (
               <motion.div
                 key={item.event.id}
-                className="absolute inset-0 cursor-grab touch-pan-y active:cursor-grabbing"
-                style={{ x, rotate }}
+                className="absolute inset-0 cursor-grab touch-pan-y rounded-[2rem] active:cursor-grabbing"
+                style={{ x, rotate, boxShadow: glow }}
                 drag="x"
                 dragDirectionLock
                 dragElastic={0.9}
                 dragConstraints={{ left: 0, right: 0 }}
+                onPointerDown={(e) => (press.current = { x: e.clientX, y: e.clientY, dragged: false })}
+                onDragStart={() => press.current && (press.current.dragged = true)}
                 onDragEnd={onDragEnd}
-                onTap={() => onOpen(item)}
+                onPointerUp={(e) => onCardPointerUp(e, item)}
+                onPointerCancel={() => (press.current = null)}
                 initial={{ scale: 0.96, opacity: 0.6 }}
                 animate={{ scale: 1, opacity: 1 }}
               >

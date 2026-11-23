@@ -40,3 +40,8 @@ const listFormatter = new Intl.ListFormat('en', { style: 'long', type: 'conjunct
 export function formatList(items: readonly string[]): string {
   return listFormatter.format(items);
 }
+
+/** Joins the non-empty parts with " · ", e.g. a major and year where either may be blank. */
+export function detailLine(...parts: (string | null | undefined)[]): string {
+  return parts.filter((part): part is string => Boolean(part && part.trim())).join(' · ');
+}

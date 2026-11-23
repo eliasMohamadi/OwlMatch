@@ -10,7 +10,6 @@ import { useToast } from '../../components/ui/Toast';
 import { api } from '../../lib/api';
 import { cn } from '../../lib/cn';
 import { useEvent, useSwipe, useUnswipe } from '../../lib/queries';
-import { useSession } from '../../lib/session';
 import { useQueryClient } from '@tanstack/react-query';
 import { PeopleGoing } from '../social/PeopleGoing';
 import { EventCover } from './EventCover';
@@ -119,7 +118,7 @@ function EventDetails({ event }: { event: EventView }) {
                 {isInterested ? 'Not interested anymore' : "I'm Interested"}
               </Button>
             )}
-            <a href={calendarLinkFor(event)} target="_blank" rel="noreferrer" className={buttonStyles({ variant: 'dark', size: 'lg' })}>
+            <a href={calendarLinkFor(event)} target="_blank" rel="noreferrer" className={buttonStyles({ variant: 'google', size: 'lg' })}>
               <CalendarPlus size={18} aria-hidden /> Add to Google Calendar
             </a>
             {event.source.type === 'owl_life_pdf' && event.source.url ? (
@@ -184,7 +183,6 @@ function Fact({ icon, label, value, note }: { icon: React.ReactNode; label: stri
 }
 
 function ModerationActions({ event }: { event: EventView }) {
-  const { studentId } = useSession();
   const [reportOpen, setReportOpen] = useState(false);
   const [reason, setReason] = useState('');
   const toast = useToast();
@@ -193,14 +191,14 @@ function ModerationActions({ event }: { event: EventView }) {
 
   const remove = async () => {
     if (!window.confirm("Delete this event permanently? Everyone's RSVPs and join requests for it are deleted too. This can't be undone.")) return;
-    await api.removeEvent(event.id, studentId);
+    await api.removeEvent(event.id);
     void queryClient.invalidateQueries();
     toast('Event deleted', 'info');
     navigate('/matches');
   };
 
   const submitReport = async () => {
-    await api.report(event.id, studentId, reason);
+    await api.report(event.id, reason);
     setReportOpen(false);
     toast('Thanks — a moderator will review this event', 'info');
   };

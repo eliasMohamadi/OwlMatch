@@ -28,7 +28,7 @@ function MatchSheetBody({ eventId, onClose }: { eventId: string; onClose: () => 
       </div>
       <PeopleGoing event={event} />
       <div className="grid grid-cols-2 gap-2.5">
-        <a href={calendarLinkFor(event)} target="_blank" rel="noreferrer" className={cn(buttonStyles({ variant: 'dark' }), 'gap-2')}>
+        <a href={calendarLinkFor(event)} target="_blank" rel="noreferrer" className={cn(buttonStyles({ variant: 'google' }), 'gap-2')}>
           <CalendarPlus size={18} aria-hidden /> Calendar
         </a>
         <Link to={`/events/${event.id}`} className={buttonStyles({ variant: 'outline' })}>

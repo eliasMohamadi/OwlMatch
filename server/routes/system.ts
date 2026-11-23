@@ -4,35 +4,52 @@ import path from 'node:path';
 import { Router } from 'express';
 import { z } from 'zod';
 import type { HealthResponse } from '../../shared/types';
-import { config, isAiConfigured } from '../config';
+import { config, isAdminConfigured, isAiConfigured, isMicrosoftConfigured } from '../config';
 import { currentModel } from '../ai/gemini';
+import { requireAdmin, requireSignedIn } from '../auth/actor';
 import { HttpError, parseBody, route } from '../http';
+import { UPLOAD_DIR, pruneOrphanUploads } from '../services/uploads';
 import { resetToSeed } from '../store/db';
 
 export const systemRouter = Router();
 
 systemRouter.get(
   '/health',
-  route((): HealthResponse => ({ ok: true, ai: { configured: isAiConfigured(), model: currentModel() }, storage: 'json-file' })),
+  route(
+    (): HealthResponse => ({
+      ok: true,
+      ai: { configured: isAiConfigured(), model: currentModel() },
+      storage: 'json-file',
+      auth: { microsoft: isMicrosoftConfigured(), admin: isAdminConfigured(), allowedEmailDomains: [...config.auth.allowedEmailDomains] },
+      sampleEvents: config.sampleEvents,
+    }),
+  ),
 );
 
-/** Restores the demo dataset so the judged demo is reproducible. */
+/**
+ * Restores the starting dataset so a demo is reproducible. It permanently
+ * deletes student-created events and all swipes, so it is admin-only, and a
+ * production server also needs OWLMATCH_ALLOW_RESET=1.
+ */
 systemRouter.post(
   '/demo/reset',
-  route(() => {
-    resetToSeed();
+  route((req) => {
+    requireAdmin(req);
+    if (config.isProduction && !config.allowReset) throw new HttpError(403, 'Data reset is disabled on this server');
+    const db = resetToSeed();
+    pruneOrphanUploads(db);
     return { ok: true };
   }),
 );
 
-export const UPLOAD_DIR = () => path.join(config.dataDir, 'uploads');
 const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
 const ALLOWED_TYPES: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
 const uploadSchema = z.object({ dataUrl: z.string().max(Math.ceil(MAX_UPLOAD_BYTES * 1.4)) });
 
-/** Cover image upload. Validates type and size from the decoded bytes, stores locally. */
+/** Cover image upload for signed-in students. Validates type and size from the decoded bytes, stores locally. */
 systemRouter.post(
   '/uploads',
+  requireSignedIn,
   route((req) => {
     const { dataUrl } = parseBody(uploadSchema, req.body);
     const match = dataUrl.match(/^data:([\w/+-]+);base64,(.+)$/);

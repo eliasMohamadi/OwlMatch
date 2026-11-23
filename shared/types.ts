@@ -14,6 +14,7 @@ import type {
   joinRequestSchema,
   newEventInputSchema,
   onboardingInputSchema,
+  studentAccountSchema,
   studentSchema,
   swipeDecisionSchema,
   swipeSchema,
@@ -29,6 +30,7 @@ export type Availability = z.infer<typeof availabilitySchema>;
 export type AiProfile = z.infer<typeof aiProfileSchema>;
 export type OnboardingInput = z.infer<typeof onboardingInputSchema>;
 export type Student = z.infer<typeof studentSchema>;
+export type StudentAccount = z.infer<typeof studentAccountSchema>;
 export type CampusEvent = z.infer<typeof campusEventSchema>;
 export type NewEventInput = z.infer<typeof newEventInputSchema>;
 export type Swipe = z.infer<typeof swipeSchema>;
@@ -142,4 +144,14 @@ export interface HealthResponse {
   ok: true;
   ai: { configured: boolean; model: string };
   storage: 'json-file';
+  /** Which sign-in methods this server has configured. */
+  auth: { microsoft: boolean; admin: boolean; allowedEmailDomains: string[] };
+  /** True when the invented sample events are loaded (OWLMATCH_SAMPLE_EVENTS=1). */
+  sampleEvents: boolean;
 }
+
+/** Who the browser is signed in as. An admin acts as one demo student per tab. */
+export type AuthState =
+  | { signedIn: false }
+  | { signedIn: true; role: 'student'; studentId: string; email: string }
+  | { signedIn: true; role: 'admin' };

@@ -19,6 +19,9 @@
   --color-neutral: #b0b3b2;
   --color-success: #15803d;
   --color-danger: #c2410c;
+  /* Google Calendar blue, used only on "Add to Google Calendar" buttons so they read as Google's. */
+  --color-gcal: #1a73e8;
+  --color-gcal-deep: #1765cc;
 
   --radius-card: 1.5rem;
   --radius-control: 0.875rem;

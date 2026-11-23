@@ -104,7 +104,9 @@ export function approveJoinRequest(db: Database, eventId: string, studentId: str
  * up its uploaded cover image.
  */
 export function deleteEvent(db: Database, eventId: string, hostId: string): CampusEvent {
-  const event = requireEvent(db, eventId);
+  // Hidden (removed) events are included: a host can still delete an event that reports auto-hid.
+  const event = db.events.find((e) => e.id === eventId);
+  if (!event) throw new HttpError(404, 'Event not found');
   if (event.organizer.studentId !== hostId) throw new HttpError(403, 'Only the host can delete this event');
   db.events = db.events.filter((e) => e.id !== eventId);
   db.swipes = db.swipes.filter((s) => s.eventId !== eventId);
@@ -118,6 +120,8 @@ export const AUTO_HIDE_REPORT_THRESHOLD = 3;
 
 export function reportEvent(db: Database, eventId: string, studentId: string, reason: string, now: Date): void {
   const event = requireEvent(db, eventId);
+  requireStudent(db, studentId); // only real student records count toward the auto-hide threshold
+  if (event.organizer.studentId === studentId) throw new HttpError(400, "You can't report your own event");
   if (event.reports.some((r) => r.studentId === studentId)) return;
   event.reports.push({ studentId, reason, at: now.toISOString() });
   if (event.reports.length >= AUTO_HIDE_REPORT_THRESHOLD) event.status = 'removed';

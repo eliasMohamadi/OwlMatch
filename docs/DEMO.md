@@ -4,14 +4,17 @@ Everything below runs through the real UI and API. The same story is automated i
 
 ## Before you present (2 minutes)
 
-1. `npm install` (first time only). Put `GEMINI_API_KEY=…` in `.env` to show the live AI path.
-2. `npm run dev`. Note the web URL it prints (usually `http://localhost:5173`).
-3. Open `http://localhost:8787/api/health`. `"configured": true` means Gemini is live.
-4. **Reset the data:** Profile → *Reset demo data*, or run `npm run demo:reset`. This restores the 18 sample events (dated from today), resets Maya to a brand-new user, and clears previously created events.
-5. Open two browser tabs, sized about 430×932 (mobile) or full screen:
+1. `npm install` (first time only). Put `GEMINI_API_KEY=…` in `.env` to show the live AI path, and set `ADMIN_PASSWORD=…` so you can sign in as admin.
+2. `npm run dev:demo`. This is `npm run dev` with the 18 invented sample events loaded (`OWLMATCH_SAMPLE_EVENTS=1`). Plain `npm run dev` has no sample events, so the deck would only show Owl Life imports. Note the web URL it prints (usually `http://localhost:5173`).
+3. Open `http://localhost:8787/api/health`. `"configured": true` means Gemini is live, and `"sampleEvents": true` confirms the sample events are loaded.
+4. Open the web URL, expand **Admin sign-in (demo students)** and enter `ADMIN_PASSWORD`. Demo students are only reachable through admin sign-in; real students use *Sign in with Microsoft* ([AUTH.md](AUTH.md)).
+5. **Reset the data:** Profile → *Reset demo data*, or stop the server and run `OWLMATCH_SAMPLE_EVENTS=1 npm run demo:reset`. This restores the sample events (dated from today), resets the demo students (Maya becomes a brand-new user), and permanently deletes student-created events and all swipes. Owl Life imports and real student accounts are kept.
+6. Open two browser tabs, sized about 430×932 (mobile) or full screen:
    - Tab A: `<web-url>/create?as=stu-jordan` (Student A, Jordan)
    - Tab B: `<web-url>/welcome?as=stu-maya` (Student B, Maya, not onboarded)
-6. Keep `docs/demo-assets/game-night-cover.jpg` handy for the upload.
+7. Keep `docs/demo-assets/game-night-cover.jpg` handy for the upload.
+
+The scripts that re-record the screenshots and video (`scripts/capture-screenshots.mjs`, `scripts/record-demo.mjs`) do steps 4–5 themselves. They stop with a message if the server is not running with sample events or `ADMIN_PASSWORD` is missing.
 
 ## The six scenes
 

@@ -8,7 +8,7 @@ import { useToast } from '../../components/ui/Toast';
 import { api } from '../../lib/api';
 import { cn } from '../../lib/cn';
 import { useMatches } from '../../lib/queries';
-import { useSession } from '../../lib/session';
+import { detailLine } from '@shared/text';
 import { useQueryClient } from '@tanstack/react-query';
 import { EventCover } from '../events/EventCover';
 import { calendarLinkFor, eventWhenLabel } from '../events/eventMeta';
@@ -101,7 +101,7 @@ function MatchRow({ event }: { event: EventView }) {
           <Badge tone="outline">
             <Heart size={11} aria-hidden /> {event.interestedCount}
           </Badge>
-          <a href={calendarLinkFor(event)} target="_blank" rel="noreferrer" className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-full bg-surface px-3 text-xs font-semibold text-ink hover:bg-line" aria-label={`Add ${event.title} to Google Calendar`}>
+          <a href={calendarLinkFor(event)} target="_blank" rel="noreferrer" className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-full bg-gcal px-3 text-xs font-semibold text-white hover:bg-gcal-deep" aria-label={`Add ${event.title} to Google Calendar`}>
             <CalendarPlus size={14} aria-hidden /> Calendar
           </a>
         </div>
@@ -111,11 +111,10 @@ function MatchRow({ event }: { event: EventView }) {
 }
 
 function PendingRequests({ requests }: { requests: { event: EventView; student: { id: string; name: string; avatarColor: string; major: string } }[] }) {
-  const { studentId } = useSession();
   const queryClient = useQueryClient();
   const toast = useToast();
   const approve = async (eventId: string, requesterId: string, name: string) => {
-    await api.approve(eventId, requesterId, studentId);
+    await api.approve(eventId, requesterId);
     void queryClient.invalidateQueries();
     toast(`Approved ${name}. They can now see the exact location.`);
   };
@@ -127,7 +126,7 @@ function PendingRequests({ requests }: { requests: { event: EventView; student: 
           <li key={`${event.id}-${student.id}`} className="flex items-center gap-3">
             <Avatar name={student.name} color={student.avatarColor} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-ink">{student.name.split(' ')[0]} · {student.major}</p>
+              <p className="truncate text-sm font-semibold text-ink">{detailLine(student.name.split(' ')[0], student.major)}</p>
               <p className="truncate text-xs text-muted">{event.title}</p>
             </div>
             <Button size="sm" variant="dark" icon={<Check size={14} />} onClick={() => void approve(event.id, student.id, student.name.split(' ')[0])}>

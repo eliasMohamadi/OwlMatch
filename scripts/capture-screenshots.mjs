@@ -1,14 +1,16 @@
 // Runs the demo story against the running app and saves the deck screenshots to docs/screenshots.
+// Needs the app running with sample events (`npm run dev:demo`) and ADMIN_PASSWORD set in .env.
 // Usage: BASE=http://localhost:5173 node scripts/capture-screenshots.mjs   (then: cd presentation && npm run build)
 import path from 'node:path';
 import { chromium } from '@playwright/test';
+import { prepareDemo } from './demo-session.mjs';
 const base = process.env.BASE ?? 'http://localhost:5173';
 const out = 'docs/screenshots';
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 430, height: 932 }, deviceScaleFactor: 2 });
 const page = await ctx.newPage();
 const shot = (name) => page.screenshot({ path: `${out}/${name}.png` });
-await page.request.post(`${base}/api/demo/reset`);
+await prepareDemo(page, base);
 
 await page.goto(`${base}/create?as=stu-jordan`);
 await page.getByRole('button', { name: 'Demo example' }).click();

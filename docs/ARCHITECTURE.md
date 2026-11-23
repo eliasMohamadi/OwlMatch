@@ -16,7 +16,8 @@
 | Layer | Responsibility | Key files |
 |---|---|---|
 | `shared/` | Pure domain logic with no I/O. One implementation of the rules for client, server and tests. | `schemas.ts`, `ranking.ts`, `time.ts`, `calendar.ts`, `eventValidation.ts` |
-| `server/routes` | HTTP only: parse input with zod, call a service, return a view | `students.ts`, `events.ts`, `system.ts` |
+| `server/auth` | Microsoft Entra sign-in (OIDC + PKCE, ID-token verification), signed session cookies, and `resolveActor`: the one place that decides which student a request acts as | `entra.ts`, `session.ts`, `actor.ts` |
+| `server/routes` | HTTP only: parse input with zod, call a service, return a view | `auth.ts`, `students.ts`, `events.ts`, `system.ts` |
 | `server/services` | Mutations as plain functions over a `Database` object, plus privacy-aware projections | `eventActions.ts`, `eventViews.ts` |
 | `server/ai` | The recommendation pipeline, concierge, prompts, Gemini client and heuristic fallbacks | `recommend.ts`, `concierge.ts`, `profile.ts`, `gemini.ts`, `heuristics.ts` |
 | `server/store` | Persistence (`read`, `mutate`, `resetToSeed`) and seed data | `db.ts`, `seed.ts` |
@@ -31,6 +32,8 @@
 **Swipe.** `POST /api/events/:id/swipe` upserts one swipe per student and event. A pass removes any opt-in or join request. Counts are always derived from stored records (`eventViews.ts`).
 
 **Create event.** The client runs the same `validateNewEvent` the server runs, so errors show instantly. Images are downscaled in the browser, then uploaded as base64 to `POST /api/uploads`. The server checks the type and decoded size and stores the file under `OWLMATCH_DATA_DIR/uploads`. The new event is then visible to every other student's next recommendation request.
+
+**Sign-in.** *Sign in with Microsoft* → `/api/auth/microsoft/start` → Microsoft (password + Authenticator, per the university's policy) → `/api/auth/microsoft/callback`. The server verifies the ID token, checks the tenant and email domain, finds or creates the student, and sets a signed session cookie. Every other `/api` route (except `/health`) requires that cookie. Routes take the acting student from `resolveActor(req)`, never from the body or query. An admin session acts as the demo student named in the `X-OwlMatch-As` header, which the client fills from the tab's `?as=` choice. See [AUTH.md](AUTH.md).
 
 **Privacy.** `toEventView(db, event, viewerId)` is the single place that decides what a viewer may see. Approval-only events have their address removed until the host approves. `GET /events/:id/people` returns names only if the viewer has opted in themselves, and only for students who opted in and haven't turned off social discovery.
 

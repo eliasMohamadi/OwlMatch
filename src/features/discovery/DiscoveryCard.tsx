@@ -10,8 +10,9 @@ export function DiscoveryCard({ item }: { item: RecommendationItem }) {
   const { event, recommendation } = item;
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-[2rem] border border-line bg-white shadow-card" aria-label={event.title}>
-      <div className="relative">
-        <EventCover imageUrl={event.coverImageUrl} category={event.categories[0]} title={event.title} className="h-32 shrink-0 sm:h-44" iconSize={130} />
+      {/* The cover takes every pixel the text below doesn't need, so taller screens show more of the image. */}
+      <div className="relative min-h-32 flex-1">
+        <EventCover imageUrl={event.coverImageUrl} category={event.categories[0]} title={event.title} className="h-full w-full" iconSize={130} />
         <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3.5">
           <MatchScore recommendation={recommendation} />
           <SourceBadge event={event} />
@@ -22,7 +23,7 @@ export function DiscoveryCard({ item }: { item: RecommendationItem }) {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col p-4 sm:p-5">
+      <div className="flex shrink-0 flex-col p-4 sm:p-5">
         <h2 className="text-balance text-[1.25rem] leading-tight sm:text-[1.35rem] font-extrabold tracking-[-0.03em] text-ink">{event.title}</h2>
         <p className="mt-1 truncate text-sm text-muted">by {event.organizer.name}</p>
 

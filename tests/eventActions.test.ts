@@ -148,3 +148,26 @@ describe('real data only', () => {
     expect(cleaned.connections).toHaveLength(0);
   });
 });
+
+describe('report integrity', () => {
+  it('ignores made-up reporter ids and stops hosts reporting their own event', () => {
+    const event = createStudentEvent(db, input(), NOW);
+    for (const fake of ['nobody-1', 'nobody-2', 'nobody-3']) {
+      expect(() => reportEvent(db, event.id, fake, 'spam', NOW)).toThrow(expect.objectContaining({ status: 404 }));
+    }
+    expect(() => reportEvent(db, event.id, 'stu-jordan', 'spam', NOW)).toThrow(expect.objectContaining({ status: 400 }));
+    expect(event.reports).toHaveLength(0);
+    expect(event.status).toBe('active');
+  });
+});
+
+describe('deleting a hidden event', () => {
+  it('lets the host delete an event that reports auto-hid', () => {
+    const event = createStudentEvent(db, input(), NOW);
+    for (const r of ['stu-maya', 'stu-sam', 'stu-alex']) reportEvent(db, event.id, r, 'spam', NOW);
+    expect(event.status).toBe('removed');
+    expect(() => deleteEvent(db, event.id, 'stu-sam')).toThrow(expect.objectContaining({ status: 403 }));
+    deleteEvent(db, event.id, 'stu-jordan');
+    expect(db.events.some((e) => e.id === event.id)).toBe(false);
+  });
+});

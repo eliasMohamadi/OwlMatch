@@ -11,7 +11,6 @@ import { useToast } from '../../components/ui/Toast';
 import { ApiError, api } from '../../lib/api';
 import { cn } from '../../lib/cn';
 import { useCreateEvent, useCurrentStudent } from '../../lib/queries';
-import { useSession } from '../../lib/session';
 import { EventCover } from './EventCover';
 import { ACCEPTED_IMAGE_TYPES, ImageError, prepareCoverImage } from './imageUpload';
 
@@ -60,7 +59,6 @@ export function CreateEventPage() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [uploading, setUploading] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
-  const { studentId } = useSession();
   const { data: student } = useCurrentStudent();
   const create = useCreateEvent();
   const navigate = useNavigate();
@@ -94,7 +92,8 @@ export function CreateEventPage() {
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
-    const input: NewEventInput = { ...draft, organizerId: studentId, capacity: draft.capacity ? Number(draft.capacity) : null };
+    // The server sets the organizer from the session; the id here only satisfies the shared validator.
+    const input: NewEventInput = { ...draft, organizerId: student?.id ?? 'me', capacity: draft.capacity ? Number(draft.capacity) : null };
     const result = validateNewEvent(input, new Date());
     if (!result.ok) {
       setErrors(result.errors);
@@ -119,6 +118,9 @@ export function CreateEventPage() {
         <div>
           <p className="text-sm font-medium text-muted">Host something</p>
           <h1 className="text-[1.85rem] leading-none font-extrabold tracking-[-0.04em] text-ink">Create an event</h1>
+          <p className="mt-2 text-xs text-muted">
+            Fields marked <span className="text-neutral">*</span> are required.
+          </p>
         </div>
         <Button type="button" variant="outline" size="sm" icon={<Wand2 size={16} />} onClick={() => { setDraft(DEMO_EXAMPLE()); setErrors({}); }}>
           Demo example
@@ -153,14 +155,17 @@ export function CreateEventPage() {
         </Section>
 
         <Section title="The basics">
-          <Field label="Event name" error={errors.title} htmlFor="title">
+          <Field label="Event name" required error={errors.title} htmlFor="title">
             <input id="title" value={draft.title} onChange={(e) => set('title', e.target.value)} className={inputClass(errors.title)} placeholder="Pickup basketball, study group, game night…" />
           </Field>
-          <Field label="Description" error={errors.description} htmlFor="description">
+          <Field label="Description" required error={errors.description} htmlFor="description">
             <textarea id="description" rows={4} value={draft.description} onChange={(e) => set('description', e.target.value)} className={cn(inputClass(errors.description), 'h-auto py-3')} placeholder="What will people do? Who is it for? What should they bring?" />
           </Field>
           <fieldset>
-            <legend className="mb-2 text-sm font-semibold text-ink">Categories (up to {MAX_CATEGORIES})</legend>
+            <legend className="mb-2 text-sm font-semibold text-ink">
+              Categories (up to {MAX_CATEGORIES})
+              <RequiredMark />
+            </legend>
             <div className="flex flex-wrap gap-2">
               {INTEREST_LIST.map((i) => (
                 <Chip key={i.id} selected={draft.categories.includes(i.id)} onClick={() => toggleCategory(i.id)}>
@@ -174,7 +179,10 @@ export function CreateEventPage() {
 
         <Section title="When & where">
           <fieldset>
-            <legend className="mb-2 text-sm font-semibold text-ink">Campus</legend>
+            <legend className="mb-2 text-sm font-semibold text-ink">
+              Campus
+              <RequiredMark />
+            </legend>
             <div className="flex gap-2">
               {(['marietta', 'kennesaw'] as const).map((campus) => (
                 <Chip key={campus} selected={draft.campus === campus} onClick={() => set('campus', campus)}>
@@ -183,20 +191,20 @@ export function CreateEventPage() {
               ))}
             </div>
           </fieldset>
-          <Field label="Venue" error={errors.venue} htmlFor="venue">
+          <Field label="Venue" required error={errors.venue} htmlFor="venue">
             <input id="venue" value={draft.venue} onChange={(e) => set('venue', e.target.value)} className={inputClass(errors.venue)} placeholder="Student Center Game Room" />
           </Field>
           <Field label="Exact location (room, entrance)" htmlFor="address" hint="Hidden until you approve someone, if you choose 'Approval required'.">
             <input id="address" value={draft.address} onChange={(e) => set('address', e.target.value)} className={inputClass()} placeholder="Room 210, side entrance" />
           </Field>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Field label="Date" error={errors.date} htmlFor="date">
+            <Field label="Date" required error={errors.date} htmlFor="date">
               <input id="date" type="date" value={draft.date} onChange={(e) => set('date', e.target.value)} className={inputClass(errors.date)} />
             </Field>
-            <Field label="Starts" error={errors.startTime} htmlFor="start">
+            <Field label="Starts" required error={errors.startTime} htmlFor="start">
               <input id="start" type="time" value={draft.startTime} onChange={(e) => set('startTime', e.target.value)} className={inputClass(errors.startTime)} />
             </Field>
-            <Field label="Ends" error={errors.endTime} htmlFor="end">
+            <Field label="Ends" required error={errors.endTime} htmlFor="end">
               <input id="end" type="time" value={draft.endTime} onChange={(e) => set('endTime', e.target.value)} className={inputClass(errors.endTime)} />
             </Field>
           </div>
@@ -205,8 +213,8 @@ export function CreateEventPage() {
 
         <Section title="Vibe & access">
           <div className="grid gap-4 sm:grid-cols-2">
-            <ChipRow label="Group size" value={draft.groupSize} options={[['small', 'Small'], ['medium', 'Medium'], ['large', 'Large']]} onChange={(v) => set('groupSize', v)} />
-            <ChipRow label="Energy" value={draft.energy} options={[['relaxed', 'Relaxed'], ['high', 'High-energy']]} onChange={(v) => set('energy', v)} />
+            <ChipRow label="Group size" required value={draft.groupSize} options={[['small', 'Small'], ['medium', 'Medium'], ['large', 'Large']]} onChange={(v) => set('groupSize', v)} />
+            <ChipRow label="Energy" required value={draft.energy} options={[['relaxed', 'Relaxed'], ['high', 'High-energy']]} onChange={(v) => set('energy', v)} />
           </div>
           <Toggle checked={draft.beginnerFriendly} onChange={(v) => set('beginnerFriendly', v)} label="Beginner friendly" description="Newcomers welcome, no experience needed." />
           <Field label="Max attendees (optional)" error={errors.capacity} htmlFor="capacity">
@@ -214,6 +222,7 @@ export function CreateEventPage() {
           </Field>
           <ChipRow
             label="Who can join"
+            required
             value={draft.visibility}
             options={[['public', 'Public'], ['approval', 'Approval required'], ['invite', 'Invite only (link)']]}
             onChange={(v) => set('visibility', v)}
@@ -222,9 +231,10 @@ export function CreateEventPage() {
 
         <Section title="Organizer">
           <p className="text-sm text-muted">
-            Posting as <span className="font-semibold text-ink">{student?.name}</span> (demo account).
+            Posting as <span className="font-semibold text-ink">{student?.name}</span>
+            {student?.account.type === 'demo' && ' (demo account)'}.
           </p>
-          <Field label="Student organization (optional)" htmlFor="org" hint="Shown as a claim. Organization affiliation is not verified in demo mode.">
+          <Field label="Student organization (optional)" htmlFor="org" hint="Shown as a claim. OwlMatch does not verify organization affiliation.">
             <input id="org" value={draft.organizationName} onChange={(e) => set('organizationName', e.target.value)} className={inputClass()} placeholder="e.g. Game Dev Society" />
           </Field>
         </Section>
@@ -251,11 +261,38 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function Field({ label, error, hint, htmlFor, children }: { label: string; error?: string; hint?: string; htmlFor: string; children: ReactNode }) {
+/** A faint grey asterisk for fields a host must fill in; screen readers hear "required". */
+function RequiredMark() {
+  return (
+    <>
+      <span aria-hidden className="ml-0.5 font-normal text-neutral">
+        *
+      </span>
+      <span className="sr-only"> (required)</span>
+    </>
+  );
+}
+
+function Field({
+  label,
+  required = false,
+  error,
+  hint,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  hint?: string;
+  htmlFor: string;
+  children: ReactNode;
+}) {
   return (
     <div>
       <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-semibold text-ink">
         {label}
+        {required && <RequiredMark />}
       </label>
       {children}
       {error ? <p className="mt-1.5 text-sm text-danger" role="alert">{error}</p> : hint && <p className="mt-1.5 text-xs text-muted">{hint}</p>}
@@ -263,10 +300,25 @@ function Field({ label, error, hint, htmlFor, children }: { label: string; error
   );
 }
 
-function ChipRow<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: [T, string][]; onChange: (v: T) => void }) {
+function ChipRow<T extends string>({
+  label,
+  required = false,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  required?: boolean;
+  value: T;
+  options: [T, string][];
+  onChange: (v: T) => void;
+}) {
   return (
     <fieldset>
-      <legend className="mb-2 text-sm font-semibold text-ink">{label}</legend>
+      <legend className="mb-2 text-sm font-semibold text-ink">
+        {label}
+        {required && <RequiredMark />}
+      </legend>
       <div className="flex flex-wrap gap-2">
         {options.map(([v, text]) => (
           <Chip key={v} selected={value === v} onClick={() => onChange(v)}>

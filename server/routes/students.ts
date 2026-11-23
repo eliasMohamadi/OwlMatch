@@ -5,13 +5,32 @@ import type { MatchesResponse } from '../../shared/types';
 import { askConcierge } from '../ai/concierge';
 import { understandStudent } from '../ai/profile';
 import { compareRankings, recommend } from '../ai/recommend';
+import { isDemoStudent, requireAdmin, requireSignedIn, resolveActor } from '../auth/actor';
 import { toEventView, toStudentSummary } from '../services/eventViews';
-import { parseBody, requireStudent, route } from '../http';
+import { HttpError, parseBody, requireStudent, route } from '../http';
 import { mutate, read } from '../store/db';
 
 export const studentsRouter = Router();
+studentsRouter.use(requireSignedIn);
 
-studentsRouter.get('/', route(() => read().students.map(toStudentSummary)));
+/** The admin's demo-student switcher. Real students are never listed. */
+studentsRouter.get(
+  '/',
+  route((req) => {
+    requireAdmin(req);
+    return read().students.filter(isDemoStudent).map(toStudentSummary);
+  }),
+);
+
+/** Every `/:id` route is only for the student this session acts as. */
+studentsRouter.param('id', (req, _res, next, id) => {
+  try {
+    if (resolveActor(req, read()).id !== id) throw new HttpError(403, 'You can only access your own profile');
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 studentsRouter.get('/:id', route((req) => requireStudent(read(), req.params.id)));
 
@@ -30,7 +49,11 @@ studentsRouter.put(
   }),
 );
 
-const settingsSchema = z.object({ socialVisible: z.boolean() });
+/** App settings. Send only the ones that change. */
+const settingsSchema = z
+  .object({ socialVisible: z.boolean().optional(), showMatchSheet: z.boolean().optional() })
+  .strict()
+  .refine((s) => Object.keys(s).length > 0, 'Send at least one setting');
 
 studentsRouter.patch(
   '/:id/settings',
@@ -38,7 +61,8 @@ studentsRouter.patch(
     const settings = parseBody(settingsSchema, req.body);
     return mutate((db) => {
       const student = requireStudent(db, req.params.id);
-      student.socialVisible = settings.socialVisible;
+      if (settings.socialVisible !== undefined) student.socialVisible = settings.socialVisible;
+      if (settings.showMatchSheet !== undefined) student.showMatchSheet = settings.showMatchSheet;
       return student;
     });
   }),

@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { CloudOff, RefreshCw, Search, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { CloudOff, RefreshCw, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { DiscoverFilters, RecommendationItem, SwipeDecision } from '@shared/types';
@@ -14,7 +14,6 @@ import { SwipeDeck } from './SwipeDeck';
 
 export function DiscoverPage() {
   const [filters, setFilters] = useState<DiscoverFilters>({});
-  const [search, setSearch] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [decided, setDecided] = useState<Set<string>>(new Set());
   const [matchedEventId, setMatchedEventId] = useState<string | null>(null);
@@ -35,12 +34,17 @@ export function DiscoverPage() {
       swipe.mutate(
         { eventId: item.event.id, decision },
         {
-          onSuccess: () => decision === 'interested' && setMatchedEventId(item.event.id),
+          onSuccess: () => {
+            if (decision !== 'interested') return;
+            // Settings → "Pop-up after swiping right". When off, a short toast confirms the save instead.
+            if (student?.showMatchSheet === false) toast('Saved to My Matches');
+            else setMatchedEventId(item.event.id);
+          },
           onError: () => toast('Could not save that swipe. Check your connection.', 'error'),
         },
       );
     },
-    [swipe, toast],
+    [swipe, toast, student?.showMatchSheet],
   );
 
   const onOpen = useCallback((item: RecommendationItem) => navigate(`/events/${item.event.id}`), [navigate]);
@@ -51,48 +55,30 @@ export function DiscoverPage() {
     void queryClient.invalidateQueries({ queryKey: ['recommendations', studentId] });
   };
 
-  const applySearch = (event: React.FormEvent) => {
-    event.preventDefault();
-    setDecided(new Set());
-    setFilters({ ...filters, query: search.trim() || undefined });
-  };
-
   return (
     <div className="mx-auto max-w-xl">
+      {/* No search bar: the AI concierge handles free-text searching, so the card gets that space. */}
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-muted">{student ? `For ${student.name.split(' ')[0]}` : ' '}</p>
           <h1 className="text-[1.85rem] leading-none font-extrabold tracking-[-0.04em] text-ink">Discover</h1>
         </div>
-        <ModeIndicator mode={recommendations.data?.mode} loading={recommendations.isFetching} />
-      </div>
-
-      <div className="mb-5 flex gap-2">
-        <form onSubmit={applySearch} className="relative flex-1" role="search">
-          <Search size={18} className="absolute top-1/2 left-3.5 -translate-y-1/2 text-muted" aria-hidden />
-          <label htmlFor="discover-search" className="sr-only">
-            Search activities
-          </label>
-          <input
-            id="discover-search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search activities"
-            className="h-12 w-full rounded-full border border-line bg-white pr-4 pl-10 text-[15px] placeholder:text-neutral focus:border-ink focus:outline-none"
-          />
-        </form>
-        <button
-          type="button"
-          onClick={() => setFiltersOpen(true)}
-          className="relative flex h-12 items-center gap-2 rounded-full border border-line bg-white px-4 text-sm font-semibold text-ink hover:border-ink/30"
-        >
-          <SlidersHorizontal size={18} aria-hidden /> <span className="hidden sm:inline">Filters</span>
-          {activeFilters > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-[11px] font-bold text-ink">
-              {activeFilters}
-            </span>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <ModeIndicator mode={recommendations.data?.mode} loading={recommendations.isFetching} />
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(true)}
+            aria-label={activeFilters > 0 ? `Filters (${activeFilters} active)` : 'Filters'}
+            className="relative flex h-9 items-center gap-1.5 rounded-full border border-line bg-white px-3 text-sm font-semibold text-ink hover:border-ink/30"
+          >
+            <SlidersHorizontal size={16} aria-hidden /> <span className="hidden sm:inline">Filters</span>
+            {activeFilters > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-[11px] font-bold text-ink">
+                {activeFilters}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {recommendations.data?.mode === 'fallback' && (
@@ -122,9 +108,9 @@ export function DiscoverPage() {
               <Button onClick={refresh} icon={<RefreshCw size={16} />}>
                 Refresh picks
               </Button>
-              {(activeFilters > 0 || filters.query) && (
-                <Button variant="outline" onClick={() => { setFilters({}); setSearch(''); }}>
-                  Broaden search
+              {activeFilters > 0 && (
+                <Button variant="outline" onClick={() => setFilters({})}>
+                  Clear filters
                 </Button>
               )}
             </div>
@@ -138,7 +124,7 @@ export function DiscoverPage() {
         filters={filters}
         onChange={(next) => {
           setDecided(new Set());
-          setFilters({ ...next, query: filters.query });
+          setFilters(next);
         }}
       />
       <MatchSheet eventId={matchedEventId} onClose={() => setMatchedEventId(null)} />

@@ -9,9 +9,9 @@ const db = createSeedDatabase(NOW);
 function student(overrides: Partial<Student> = {}): Student {
   return {
     id: 'stu-test', name: 'Test Student', major: 'CS', year: 'Junior', avatarColor: '#fff',
-    onboarded: true, socialVisible: true, aiProfile: null, campus: 'both',
+    onboarded: true, socialVisible: true, showMatchSheet: true, aiProfile: null, campus: 'both',
     interests: ['gaming', 'tech'], about: '', availability: [],
-    social: { makeFriends: false, groupSize: 'any', tryNew: false, energy: 'any' },
+    social: { makeFriends: false, groupSize: 'any', tryNew: false, energy: 'any' }, account: { type: 'demo' },
     ...overrides,
   };
 }
