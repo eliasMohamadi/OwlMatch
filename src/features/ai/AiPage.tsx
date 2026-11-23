@@ -53,7 +53,9 @@ function Concierge() {
   const [pending, setPending] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
+  // Keep the newest message in view once the conversation starts (not on first load, so the title stays visible).
   useEffect(() => {
+    if (messages.length === 0 && !pending) return;
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages, pending]);
 
@@ -74,7 +76,8 @@ function Concierge() {
   };
 
   return (
-    <div className="flex flex-col">
+    // Bottom padding leaves room for the pinned message box so the last reply can scroll above it.
+    <div className="flex flex-col pb-20 md:pb-24">
       <div className="space-y-4" aria-live="polite">
         <AssistantBubble>
           Hey! Tell me what you're in the mood for — a vibe, a time, a campus — and I'll find real activities on OwlMatch that fit.
@@ -123,31 +126,42 @@ function Concierge() {
             </span>
           </AssistantBubble>
         )}
-        <div ref={endRef} />
+        {/* scrollIntoView stops short of this margin, so the newest message isn't hidden behind the box and tab bar. */}
+        <div ref={endRef} className="scroll-mb-[calc(var(--tabbar-height)+6rem)] md:scroll-mb-28" />
       </div>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void ask(input);
-        }}
-        className="sticky bottom-20 mt-6 flex items-center gap-2 rounded-full border border-line bg-white p-1.5 pl-5 shadow-card md:bottom-4"
-      >
-        <label htmlFor="concierge-input" className="sr-only">
-          Ask the concierge
-        </label>
-        <input
-          id="concierge-input"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Find something fun this weekend…"
-          maxLength={300}
-          className="h-11 flex-1 bg-transparent text-[16px] placeholder:text-neutral focus:outline-none"
-        />
-        <button type="submit" disabled={pending || input.trim().length < 2} aria-label="Send" className="flex h-11 w-11 items-center justify-center rounded-full bg-gold text-ink transition-transform active:scale-90 disabled:opacity-40">
-          <ArrowUp size={20} strokeWidth={2.5} />
-        </button>
-      </form>
+      {/*
+        The message box is pinned to the bottom of the screen like a chat app, whatever the
+        conversation length: just above the tab bar on phones (the tab bar's height includes
+        the iPhone home-indicator area), and at the bottom of the content column on desktop
+        (beside the 16rem sidebar). The widths mirror AppShell's <main> and this page's column.
+      */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-[var(--tabbar-height)] z-30 bg-gradient-to-t from-paper via-paper/90 to-transparent pt-4 pb-3 md:bottom-0 md:left-64 md:pb-6">
+        <div className="mx-auto w-full max-w-5xl px-4 md:px-10">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void ask(input);
+            }}
+            className="pointer-events-auto mx-auto flex max-w-2xl items-center gap-2 rounded-full border border-line bg-white p-1.5 pl-5 shadow-card"
+          >
+            <label htmlFor="concierge-input" className="sr-only">
+              Ask the concierge
+            </label>
+            <input
+              id="concierge-input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Find something fun this weekend…"
+              maxLength={300}
+              className="h-11 flex-1 bg-transparent text-[16px] placeholder:text-neutral focus:outline-none"
+            />
+            <button type="submit" disabled={pending || input.trim().length < 2} aria-label="Send" className="flex h-11 w-11 items-center justify-center rounded-full bg-gold text-ink transition-transform active:scale-90 disabled:opacity-40">
+              <ArrowUp size={20} strokeWidth={2.5} />
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

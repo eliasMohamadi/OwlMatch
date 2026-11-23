@@ -51,6 +51,10 @@
 }
 
 @layer base {
+  :root {
+    /* Height of the mobile bottom tab bar (AppShell): 3.5rem tabs + 1px border + the phone's home-indicator area. */
+    --tabbar-height: calc(3.5rem + 1px + env(safe-area-inset-bottom));
+  }
   html {
     -webkit-tap-highlight-color: transparent;
     text-rendering: optimizeLegibility;

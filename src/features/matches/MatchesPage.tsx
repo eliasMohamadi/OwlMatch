@@ -7,11 +7,12 @@ import { Avatar, Badge, EmptyState, Skeleton } from '../../components/ui/primiti
 import { useToast } from '../../components/ui/Toast';
 import { api } from '../../lib/api';
 import { cn } from '../../lib/cn';
-import { useMatches } from '../../lib/queries';
+import { useMatches, useUnswipe } from '../../lib/queries';
 import { detailLine } from '@shared/text';
 import { useQueryClient } from '@tanstack/react-query';
 import { EventCover } from '../events/EventCover';
 import { calendarLinkFor, eventWhenLabel } from '../events/eventMeta';
+import { SwipeToRemoveRow } from './SwipeToRemoveRow';
 
 const TABS = [
   { id: 'interested', label: 'Interested' },
@@ -23,7 +24,34 @@ type Tab = (typeof TABS)[number]['id'];
 export function MatchesPage() {
   const [tab, setTab] = useState<Tab>('interested');
   const { data, isLoading } = useMatches();
-  const lists = { interested: data?.interested ?? [], hosting: data?.hosting ?? [], past: data?.past ?? [] };
+  const unswipe = useUnswipe();
+  const toast = useToast();
+  /** The one Interested row whose delete button is showing. */
+  const [openRowId, setOpenRowId] = useState<string | null>(null);
+  /** Rows removed on this screen, hidden right away while the server catches up. */
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
+  const lists = {
+    interested: (data?.interested ?? []).filter((e) => !removedIds.has(e.id)),
+    hosting: data?.hosting ?? [],
+    past: data?.past ?? [],
+  };
+
+  /** Same as "Not interested anymore": also clears "Going together" and any join request. */
+  const removeInterest = (event: EventView) => {
+    setOpenRowId(null);
+    setRemovedIds((current) => new Set(current).add(event.id));
+    unswipe.mutate(event.id, {
+      onSuccess: () => toast('Removed from your interests'),
+      onError: () => {
+        setRemovedIds((current) => {
+          const next = new Set(current);
+          next.delete(event.id);
+          return next;
+        });
+        toast(`Couldn't remove ${event.title}. Try again.`, 'error');
+      },
+    });
+  };
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -61,13 +89,27 @@ export function MatchesPage() {
         ) : lists[tab].length === 0 ? (
           <EmptyForTab tab={tab} />
         ) : (
-          <ul className="space-y-3">
-            {lists[tab].map((event) => (
-              <li key={event.id}>
-                <MatchRow event={event} />
-              </li>
-            ))}
-          </ul>
+          <>
+            {tab === 'interested' && <p className="mb-2.5 text-xs text-muted">Swipe an event left to remove it.</p>}
+            <ul className="space-y-3">
+              {lists[tab].map((event) => (
+                <li key={event.id}>
+                  {tab === 'interested' ? (
+                    <SwipeToRemoveRow
+                      open={openRowId === event.id}
+                      onOpenChange={(open) => setOpenRowId(open ? event.id : (current) => (current === event.id ? null : current))}
+                      onRemove={() => removeInterest(event)}
+                      label={event.title}
+                    >
+                      <MatchRow event={event} />
+                    </SwipeToRemoveRow>
+                  ) : (
+                    <MatchRow event={event} />
+                  )}
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
     </div>

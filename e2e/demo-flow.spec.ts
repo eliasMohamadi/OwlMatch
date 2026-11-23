@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { E2E_ADMIN_PASSWORD } from './constants';
 
 /**
@@ -19,7 +19,12 @@ type Pointer = 'mouse' | 'touch';
 
 /** Drags the top card horizontally with a real press-move-release, by mouse or by finger (touch events). */
 async function dragCard(page: Page, dx: number, pointer: Pointer = 'mouse') {
-  const box = (await page.getByRole('article').first().boundingBox())!;
+  await dragElement(page, page.getByRole('article').first(), dx, pointer);
+}
+
+/** Press in the middle of an element, move horizontally by dx, release. */
+async function dragElement(page: Page, target: Locator, dx: number, pointer: Pointer = 'mouse') {
+  const box = (await target.boundingBox())!;
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
   const steps = 12;
@@ -206,6 +211,67 @@ test.describe('admin acting as demo students', () => {
       expect(await (await page.request.get('/api/auth/me')).json()).toEqual({ signedIn: false });
     });
   }
+
+  for (const pointer of ['mouse', 'touch'] as const) {
+    test(`My Matches: swiping an interested event left removes it (${pointer})`, async ({ page }) => {
+      await as(page, 'stu-sam', '/matches');
+      const rows = page.getByRole('tabpanel').getByRole('article');
+      const titleOf = async (row: Locator) => (await row.getByRole('link').nth(1).textContent())!.trim();
+      await expect(rows.first()).toBeVisible();
+      const startCount = await rows.count();
+      expect(startCount).toBeGreaterThanOrEqual(3);
+
+      // A short swipe reveals the delete button and stays open; a tap on it removes the event.
+      const first = await titleOf(rows.first());
+      await dragElement(page, rows.first(), -110, pointer);
+      await expect(page).toHaveURL(/\/matches/); // the swipe didn't open the event
+      await page.getByRole('button', { name: `Remove ${first} from your interests` }).click();
+      await expect(page.getByText('Removed from your interests')).toBeVisible();
+      await expect(rows).toHaveCount(startCount - 1);
+      await expect(page.getByRole('tabpanel').getByText(first, { exact: true })).toHaveCount(0);
+
+      // Tapping an open row closes it instead of opening the event.
+      await dragElement(page, rows.first(), -110, pointer);
+      if (pointer === 'touch') await rows.first().tap();
+      else await rows.first().click();
+      await expect(page).toHaveURL(/\/matches/);
+      await expect(rows).toHaveCount(startCount - 1);
+
+      // A long swipe removes it without tapping the button.
+      const second = await titleOf(rows.first());
+      await dragElement(page, rows.first(), -300, pointer);
+      await expect(rows).toHaveCount(startCount - 2);
+      await expect(page.getByRole('tabpanel').getByText(second, { exact: true })).toHaveCount(0);
+
+      // Saved on the server: still gone after a reload.
+      await page.reload();
+      await expect(rows).toHaveCount(startCount - 2);
+    });
+  }
+
+  test('the concierge message box sits at the bottom, just above the tab bar', async ({ page }) => {
+    await as(page, 'stu-sam', '/ai');
+    const input = page.getByLabel('Ask the concierge');
+    await expect(input).toBeVisible();
+    const position = async () =>
+      page.evaluate(() => {
+        const form = document.querySelector('form:has(#concierge-input)')!.getBoundingClientRect();
+        const tabs = [...document.querySelectorAll('nav[aria-label="Main"]')].pop()!.getBoundingClientRect();
+        return { gapAboveTabs: tabs.top - form.bottom, left: form.left, rightGap: innerWidth - form.right };
+      });
+    // Before any messages (it used to float mid-screen here) and after a reply.
+    for (const stage of ['empty', 'after a reply']) {
+      if (stage === 'after a reply') {
+        await input.fill('Anything outdoorsy this weekend?');
+        await page.getByRole('button', { name: 'Send' }).click();
+        await expect(page.getByText('Searching campus activities…')).toHaveCount(0, { timeout: 30_000 });
+      }
+      const p = await position();
+      expect(p.gapAboveTabs, stage).toBeGreaterThanOrEqual(0);
+      expect(p.gapAboveTabs, stage).toBeLessThanOrEqual(16);
+      expect(Math.abs(p.left - p.rightGap), stage).toBeLessThanOrEqual(1); // centred with even margins
+    }
+  });
 
   test('event form rejects invalid input', async ({ page }) => {
     await as(page, 'stu-jordan', '/create');
